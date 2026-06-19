@@ -3,7 +3,10 @@ import mongoose from 'mongoose';
 
 const router = Router();
 
-// ✅ This is the route that handles /api/health
+/**
+ * GET /api/health
+ * Basic health check
+ */
 router.get('/', (req, res) => {
   res.json({
     status: 'ok',
@@ -12,21 +15,28 @@ router.get('/', (req, res) => {
   });
 });
 
+/**
+ * GET /api/health/db
+ * Detailed database health check
+ */
 router.get('/db', (req, res) => {
   const state = mongoose.connection.readyState;
   const statusMap: Record<number, string> = {
     0: 'disconnected',
     1: 'connected',
     2: 'connecting',
-    3: 'disconnected',
+    3: 'disconnecting',
   };
+
+  const isConnected = state === 1;
   res.json({
-    status: state === 1 ? 'healthy' : 'unhealthy',
+    status: isConnected ? 'healthy' : 'unhealthy',
     database: {
       status: statusMap[state] || 'unknown',
       readyState: state,
       host: mongoose.connection.host,
       dbName: mongoose.connection.name,
+      models: Object.keys(mongoose.models),
     },
   });
 });
