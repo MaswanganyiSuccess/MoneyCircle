@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 50">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0F2D5E;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A6B6B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Small Icon -->
+  <circle cx="22" cy="25" r="20" fill="url(#headerGrad)"/>
+  <circle cx="22" cy="25" r="15" fill="none" stroke="#FFD966" stroke-width="2"/>
+  <text x="22" y="32" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#FFD966" text-anchor="middle">$</text>
+  
+  <!-- Text -->
+  <text x="52" y="28" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#0F2D5E">Money</text>
+  <text x="52" y="44" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="300" fill="#1A6B6B">Circle</text>
+</svg>
