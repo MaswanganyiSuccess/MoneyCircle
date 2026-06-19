@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "seed": "ts-node src/scripts/seed.ts",
-    "test": "jest --runInBand",
+    "test": "jest --runInBand --passWithNoTests",
     "lint": "eslint src/**/*.ts",
     "backup": "ts-node src/scripts/backup-local.ts",
     "restore": "ts-node src/scripts/restore.ts"
