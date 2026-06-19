@@ -9,10 +9,23 @@ export interface IUser extends Document {
   phoneNumber: string;
   idNumber: string;
   role: 'borrower' | 'lender';
-  kycStatus: 'pending' | 'verified' | 'rejected';
+  
+  // Profile & KYC
+  avatar?: string;
+  kycDocuments?: {
+    idDocument?: string;
+    proofOfAddress?: string;
+    selfie?: string;
+  };
+  status: 'pending' | 'verified' | 'rejected';   // Account verification status
+  kycStatus: 'pending' | 'verified' | 'rejected'; // KYC verification status
+
+  // Credit
   creditGrade?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E';
   creditScore?: number;
   debtToIncomeRatio?: number;
+
+  // Address
   address?: {
     street: string;
     city: string;
@@ -20,7 +33,8 @@ export interface IUser extends Document {
     postalCode: string;
     country: string;
   };
-  // Auth fields
+
+  // Auth
   refreshToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -28,9 +42,14 @@ export interface IUser extends Document {
   lastLogin?: Date;
   failedLoginAttempts: number;
   lockUntil?: Date;
+
+  // Soft delete
+  deletedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 
+  // Instance methods
   comparePassword(candidatePassword: string): Promise<boolean>;
   incrementFailedAttempts(): Promise<void>;
   resetFailedAttempts(): Promise<void>;
@@ -66,11 +85,28 @@ const UserSchema = new Schema<IUser>(
       enum: ['borrower', 'lender'],
       required: true,
     },
+
+    // New fields for profile management
+    avatar: { type: String },
+    kycDocuments: {
+      idDocument: { type: String },
+      proofOfAddress: { type: String },
+      selfie: { type: String },
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'verified', 'rejected'],
+      default: 'pending',
+    },
+
+    // Existing KYC status (kept for backward compatibility)
     kycStatus: {
       type: String,
       enum: ['pending', 'verified', 'rejected'],
       default: 'pending',
     },
+
+    // Credit fields
     creditGrade: {
       type: String,
       enum: ['A+', 'A', 'B', 'C', 'D', 'E'],
@@ -85,6 +121,8 @@ const UserSchema = new Schema<IUser>(
       min: 0,
       max: 1,
     },
+
+    // Address
     address: {
       street: String,
       city: String,
@@ -92,6 +130,7 @@ const UserSchema = new Schema<IUser>(
       postalCode: String,
       country: { type: String, default: 'South Africa' },
     },
+
     // Auth fields
     refreshToken: { type: String },
     resetPasswordToken: { type: String },
@@ -100,6 +139,9 @@ const UserSchema = new Schema<IUser>(
     lastLogin: { type: Date },
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },
+
+    // Soft delete
+    deletedAt: { type: Date },
   },
   { timestamps: true }
 );
@@ -111,6 +153,20 @@ UserSchema.index({ creditGrade: 1 });
 UserSchema.index({ role: 1 });
 UserSchema.index({ refreshToken: 1 }, { sparse: true });
 UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
+UserSchema.index({ status: 1 });          // for filtering by account status
+UserSchema.index({ deletedAt: 1 });        // for soft delete queries
+
+// ---------- Soft Delete Middleware ----------
+// Automatically exclude soft-deleted users from queries
+UserSchema.pre('find', function () {
+  this.where({ deletedAt: null });
+});
+UserSchema.pre('findOne', function () {
+  this.where({ deletedAt: null });
+});
+UserSchema.pre('countDocuments', function () {
+  this.where({ deletedAt: null });
+});
 
 // Password hashing middleware
 UserSchema.pre('save', async function (next) {
