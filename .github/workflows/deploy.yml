@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:  # Allows manual trigger from Actions tab
 
 jobs:
   deploy:
@@ -27,17 +28,34 @@ jobs:
         run: npm run build
         working-directory: backend
 
-      - name: Deploy to Production
+      - name: Trigger Render Deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
-          echo "🚀 Deploying to production server..."
-          # Add your deployment commands here
-          # Examples:
-          # - Deploy to VPS via SSH
-          # - Deploy to AWS Elastic Beanstalk
-          # - Deploy to Heroku
-          # - Deploy to Azure App Service
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK secret not set. Skipping deployment trigger."
+            echo "ℹ️ Render auto-deploy will still happen if configured."
+            exit 0
+          fi
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "$RENDER_DEPLOY_HOOK"
+          echo "✅ Deployment triggered successfully."
 
-      - name: Health check
+      - name: Wait for service to start
+        run: sleep 15
+
+      - name: Health Check
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL || 'https://moneycircle-api.onrender.com' }}
         run: |
-          echo "🔍 Checking deployment health..."
-          # Add health check endpoint verification
+          echo "🔍 Checking deployment health at ${DEPLOY_URL}/api/health"
+          for i in {1..15}; do
+            if curl -f -s -o /dev/null "${DEPLOY_URL}/api/health"; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            echo "⏳ Waiting for service to respond... (attempt $i/15)"
+            sleep 10
+          done
+          echo "❌ Health check failed after multiple attempts."
+          exit 1
