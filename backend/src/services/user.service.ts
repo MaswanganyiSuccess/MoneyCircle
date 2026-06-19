@@ -139,5 +139,5 @@ export class UserService {
       userAgent: userAgent || '',
       metadata,
     });
-  }  // <-- This closing brace was missing
+  }
 }

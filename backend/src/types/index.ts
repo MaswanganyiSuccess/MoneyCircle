@@ -3,6 +3,7 @@ import { IUser } from '../models/User.model';
 
 export interface AuthenticatedRequest extends Request {
   user?: IUser;
+  file?: Express.Multer.File;   // ← Required for file uploads
 }
 
 export interface TokenPayload {

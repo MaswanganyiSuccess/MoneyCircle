@@ -6,7 +6,6 @@ import { updateProfileSchema, changePasswordSchema, listUsersQuerySchema } from 
 import { ZodError } from 'zod';
 
 export class UserController {
-  // GET /api/users/me
   static async getProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const user = await UserService.getProfile(req.user!.id);
@@ -16,7 +15,6 @@ export class UserController {
     }
   }
 
-  // PUT /api/users/me
   static async updateProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const data = updateProfileSchema.parse(req.body);
@@ -31,34 +29,22 @@ export class UserController {
     }
   }
 
-  // GET /api/users/:id (admin only)
   static async getUserById(req: AuthenticatedRequest, res: Response) {
     try {
       const user = await UserService.getUserById(req.params.id);
-      if (!user) {
-        return sendError(res, 'User not found', 404);
-      }
+      if (!user) return sendError(res, 'User not found', 404);
       sendSuccess(res, user, 'User retrieved successfully');
     } catch (error) {
       sendError(res, (error as Error).message, 500);
     }
   }
 
-  // GET /api/users (admin only)
   static async listUsers(req: AuthenticatedRequest, res: Response) {
     try {
       const query = listUsersQuerySchema.parse(req.query);
       const result = await UserService.listUsers(
-        {
-          role: query.role,
-          status: query.status,
-          search: query.search,
-        },
-        {
-          page: query.page,
-          limit: query.limit,
-          sort: query.sort,
-        }
+        { role: query.role, status: query.status, search: query.search },
+        { page: query.page, limit: query.limit, sort: query.sort }
       );
       sendSuccess(res, result, 'Users retrieved successfully');
     } catch (error) {
@@ -69,7 +55,6 @@ export class UserController {
     }
   }
 
-  // PUT /api/users/change-password
   static async changePassword(req: AuthenticatedRequest, res: Response) {
     try {
       const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
@@ -84,12 +69,9 @@ export class UserController {
     }
   }
 
-  // POST /api/users/upload-avatar
   static async uploadAvatar(req: AuthenticatedRequest, res: Response) {
     try {
-      if (!req.file) {
-        return sendError(res, 'No file uploaded', 400);
-      }
+      if (!req.file) return sendError(res, 'No file uploaded', 400);
       const filePath = `/uploads/${req.file.filename}`;
       const user = await UserService.uploadAvatar(req.user!.id, filePath);
       await UserService.logAction(req.user!.id, 'UPLOAD_AVATAR', { filePath }, req.ip, req.headers['user-agent']);
@@ -99,7 +81,6 @@ export class UserController {
     }
   }
 
-  // POST /api/users/kyc
   static async submitKyc(req: AuthenticatedRequest, res: Response) {
     try {
       const documents = {
@@ -115,7 +96,6 @@ export class UserController {
     }
   }
 
-  // GET /api/users/kyc/status
   static async getKycStatus(req: AuthenticatedRequest, res: Response) {
     try {
       const status = await UserService.getKycStatus(req.user!.id);
@@ -125,7 +105,6 @@ export class UserController {
     }
   }
 
-  // DELETE /api/users/me
   static async deleteAccount(req: AuthenticatedRequest, res: Response) {
     try {
       await UserService.deleteAccount(req.user!.id);

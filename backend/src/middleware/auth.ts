@@ -32,6 +32,11 @@ export const authenticateJWT = async (
       return;
     }
 
+    if (user.isLocked()) {
+      sendError(res, 'Account is locked', 401);
+      return;
+    }
+
     (req as AuthenticatedRequest).user = user;
     next();
   } catch (error) {
@@ -50,5 +55,6 @@ export const requireRole = (...roles: string[]) => {
   };
 };
 
+export const adminOnly = requireRole('admin');
 export const requireBorrower = requireRole('borrower');
 export const requireLender = requireRole('lender');
