@@ -8,8 +8,8 @@ export interface IUser extends Document {
   lastName: string;
   phoneNumber: string;
   idNumber: string;
-  monthlyIncome?: number;  // ✅ Added
-  role: 'borrower' | 'lender';
+  monthlyIncome?: number;  
+  role: 'borrower' | 'lender' | 'admin';
   
   // Profile & KYC
   avatar?: string;
@@ -81,10 +81,10 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       match: /^\d{13}$/,
     },
-    monthlyIncome: { type: Number, default: 0 },  // ✅ Added
+    monthlyIncome: { type: Number, default: 0 }, 
     role: {
       type: String,
-      enum: ['borrower', 'lender'],
+      enum: ['borrower', 'lender', 'admin'],
       required: true,
     },
 

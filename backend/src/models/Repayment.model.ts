@@ -7,11 +7,12 @@ export interface IRepayment extends Document {
   paidDate?: Date;
   status: 'pending' | 'paid' | 'overdue';
   lateFee?: number;
+  interestPortion: number;
+  principalPortion: number;
+  remainingBalance: number;
   transactionId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
-
-  isOverdue(): boolean;
 }
 
 const RepaymentSchema = new Schema<IRepayment>(
@@ -40,6 +41,18 @@ const RepaymentSchema = new Schema<IRepayment>(
       type: Number,
       min: 0,
     },
+    interestPortion: {
+      type: Number,
+      default: 0,
+    },
+    principalPortion: {
+      type: Number,
+      default: 0,
+    },
+    remainingBalance: {
+      type: Number,
+      default: 0,
+    },
     transactionId: {
       type: Schema.Types.ObjectId,
       ref: 'Transaction',
@@ -50,11 +63,5 @@ const RepaymentSchema = new Schema<IRepayment>(
 
 RepaymentSchema.index({ loanId: 1, dueDate: 1 });
 RepaymentSchema.index({ status: 1, dueDate: 1 });
-
-RepaymentSchema.methods.isOverdue = function (): boolean {
-  if (this.status === 'paid') return false;
-  const now = new Date();
-  return this.dueDate < now;
-};
 
 export const Repayment: Model<IRepayment> = mongoose.model<IRepayment>('Repayment', RepaymentSchema);

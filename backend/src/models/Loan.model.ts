@@ -6,13 +6,17 @@ export interface ILoan extends Document {
   amount: number;
   interestRate: number;
   termMonths: number;
-  status: 'pending' | 'active' | 'completed' | 'defaulted';
+  status: 'pending' | 'active' | 'completed' | 'defaulted' | 'rejected';
   applicationDate: Date;
   approvalDate?: Date;
   firstRepaymentDate?: Date;
   servicingFee: number;
-  purpose?: string;
+  purpose: string;
+  loanType: 'personal' | 'secured' | 'business' | 'student';
   collateral?: Array<{ type: string; value: number }>;
+  affordabilityCheckPassed: boolean;
+  dtiAtApplication?: number;
+  creditGradeAtApplication?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +35,7 @@ const LoanSchema = new Schema<ILoan>(
     amount: {
       type: Number,
       required: true,
-      min: 100,
+      min: 5000,
       max: 500000,
     },
     interestRate: {
@@ -43,12 +47,12 @@ const LoanSchema = new Schema<ILoan>(
     termMonths: {
       type: Number,
       required: true,
-      min: 1,
-      max: 60,
+      min: 3,
+      max: 84,
     },
     status: {
       type: String,
-      enum: ['pending', 'active', 'completed', 'defaulted'],
+      enum: ['pending', 'active', 'completed', 'defaulted', 'rejected'],
       default: 'pending',
     },
     applicationDate: {
@@ -60,12 +64,18 @@ const LoanSchema = new Schema<ILoan>(
     servicingFee: {
       type: Number,
       default: function () {
-        return (this as any).amount * 0.005;
+        return (this as any).amount * 0.005; // 0.5% of loan amount
       },
     },
     purpose: {
       type: String,
+      required: true,
       maxlength: 200,
+    },
+    loanType: {
+      type: String,
+      enum: ['personal', 'secured', 'business', 'student'],
+      default: 'personal',
     },
     collateral: [
       {
@@ -73,17 +83,28 @@ const LoanSchema = new Schema<ILoan>(
         value: { type: Number },
       },
     ],
+    affordabilityCheckPassed: {
+      type: Boolean,
+      default: false,
+    },
+    dtiAtApplication: Number,
+    creditGradeAtApplication: String,
   },
   { timestamps: true }
 );
 
+// Indexes
 LoanSchema.index({ borrowerId: 1 });
 LoanSchema.index({ status: 1, createdAt: -1 });
 LoanSchema.index({ interestRate: 1 });
-LoanSchema.index({ amount: 1, term: 1 });
+LoanSchema.index({ amount: 1, termMonths: 1 });
+LoanSchema.index({ status: 1, lenderId: 1 });
 
-LoanSchema.virtual('remainingBalance').get(function () {
-  return 0;
+// Virtual for repayment schedule (populated on demand)
+LoanSchema.virtual('repayments', {
+  ref: 'Repayment',
+  localField: '_id',
+  foreignField: 'loanId',
 });
 
 export const Loan: Model<ILoan> = mongoose.model<ILoan>('Loan', LoanSchema);
