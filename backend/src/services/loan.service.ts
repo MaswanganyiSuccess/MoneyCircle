@@ -206,7 +206,7 @@ export class LoanService {
   static async getLoanDetails(loanId: string): Promise<ILoan & { repayments: IRepayment[] }> {
     const loan = await Loan.findById(loanId).populate('repayments');
     if (!loan) {
-      throw new AppError('Loan not found', 404');
+      throw new AppError('Loan not found', 404);   // ✅ Fixed: removed extra quote
     }
     return loan as any;
   }
