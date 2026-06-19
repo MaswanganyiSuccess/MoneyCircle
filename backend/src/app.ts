@@ -23,10 +23,10 @@ if (config.nodeEnv !== 'test') {
   app.use(morgan('combined'));
 }
 
-// Routes
+// ✅ All API routes mounted at /api
 app.use('/api', routes);
 
-// Health check (root level)
+// ✅ Root health check (backup – works at /health)
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',

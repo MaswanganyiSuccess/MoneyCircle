@@ -3,7 +3,11 @@ import mongoose from 'mongoose';
 
 const router = Router();
 
-router.get('/health', (req, res) => {
+/**
+ * GET /api/health
+ * Basic health check
+ */
+router.get('/', (req, res) => {
   res.json({
     status: 'ok',
     environment: process.env.NODE_ENV,
@@ -11,7 +15,11 @@ router.get('/health', (req, res) => {
   });
 });
 
-router.get('/health/db', (req, res) => {
+/**
+ * GET /api/health/db
+ * Detailed database health check
+ */
+router.get('/db', (req, res) => {
   const state = mongoose.connection.readyState;
   const statusMap: Record<number, string> = {
     0: 'disconnected',
