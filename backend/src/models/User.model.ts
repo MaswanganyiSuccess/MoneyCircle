@@ -8,6 +8,7 @@ export interface IUser extends Document {
   lastName: string;
   phoneNumber: string;
   idNumber: string;
+  monthlyIncome?: number;  // ✅ Added
   role: 'borrower' | 'lender';
   
   // Profile & KYC
@@ -17,8 +18,8 @@ export interface IUser extends Document {
     proofOfAddress?: string;
     selfie?: string;
   };
-  status: 'pending' | 'verified' | 'rejected';   // Account verification status
-  kycStatus: 'pending' | 'verified' | 'rejected'; // KYC verification status
+  status: 'pending' | 'verified' | 'rejected';
+  kycStatus: 'pending' | 'verified' | 'rejected';
 
   // Credit
   creditGrade?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E';
@@ -80,13 +81,14 @@ const UserSchema = new Schema<IUser>(
       unique: true,
       match: /^\d{13}$/,
     },
+    monthlyIncome: { type: Number, default: 0 },  // ✅ Added
     role: {
       type: String,
       enum: ['borrower', 'lender'],
       required: true,
     },
 
-    // New fields for profile management
+    // Profile & KYC
     avatar: { type: String },
     kycDocuments: {
       idDocument: { type: String },
@@ -98,8 +100,6 @@ const UserSchema = new Schema<IUser>(
       enum: ['pending', 'verified', 'rejected'],
       default: 'pending',
     },
-
-    // Existing KYC status (kept for backward compatibility)
     kycStatus: {
       type: String,
       enum: ['pending', 'verified', 'rejected'],
@@ -153,11 +153,10 @@ UserSchema.index({ creditGrade: 1 });
 UserSchema.index({ role: 1 });
 UserSchema.index({ refreshToken: 1 }, { sparse: true });
 UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
-UserSchema.index({ status: 1 });          // for filtering by account status
-UserSchema.index({ deletedAt: 1 });        // for soft delete queries
+UserSchema.index({ status: 1 });
+UserSchema.index({ deletedAt: 1 });
 
-// ---------- Soft Delete Middleware ----------
-// Automatically exclude soft-deleted users from queries
+// Soft Delete Middleware
 UserSchema.pre('find', function () {
   this.where({ deletedAt: null });
 });
@@ -190,7 +189,7 @@ UserSchema.methods.comparePassword = async function (
 UserSchema.methods.incrementFailedAttempts = async function (): Promise<void> {
   this.failedLoginAttempts += 1;
   if (this.failedLoginAttempts >= 5) {
-    this.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 min lock
+    this.lockUntil = new Date(Date.now() + 30 * 60 * 1000);
   }
   await this.save();
 };
