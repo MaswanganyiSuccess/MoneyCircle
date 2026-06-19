@@ -5,6 +5,12 @@ export interface AuthenticatedRequest extends Request {
   user?: IUser;
 }
 
+export interface TokenPayload {
+  id: string;
+  email: string;
+  role: string;
+}
+
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;

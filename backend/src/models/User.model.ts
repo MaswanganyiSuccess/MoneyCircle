@@ -20,10 +20,21 @@ export interface IUser extends Document {
     postalCode: string;
     country: string;
   };
+  // Auth fields
+  refreshToken?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  isEmailVerified: boolean;
+  lastLogin?: Date;
+  failedLoginAttempts: number;
+  lockUntil?: Date;
   createdAt: Date;
   updatedAt: Date;
 
   comparePassword(candidatePassword: string): Promise<boolean>;
+  incrementFailedAttempts(): Promise<void>;
+  resetFailedAttempts(): Promise<void>;
+  isLocked(): boolean;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -81,15 +92,27 @@ const UserSchema = new Schema<IUser>(
       postalCode: String,
       country: { type: String, default: 'South Africa' },
     },
+    // Auth fields
+    refreshToken: { type: String },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    isEmailVerified: { type: Boolean, default: false },
+    lastLogin: { type: Date },
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
   },
   { timestamps: true }
 );
 
+// Indexes
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ idNumber: 1 }, { unique: true });
 UserSchema.index({ creditGrade: 1 });
 UserSchema.index({ role: 1 });
+UserSchema.index({ refreshToken: 1 }, { sparse: true });
+UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
 
+// Password hashing middleware
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('passwordHash')) return next();
   try {
@@ -101,10 +124,30 @@ UserSchema.pre('save', async function (next) {
   }
 });
 
+// Instance methods
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.passwordHash);
+};
+
+UserSchema.methods.incrementFailedAttempts = async function (): Promise<void> {
+  this.failedLoginAttempts += 1;
+  if (this.failedLoginAttempts >= 5) {
+    this.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 min lock
+  }
+  await this.save();
+};
+
+UserSchema.methods.resetFailedAttempts = async function (): Promise<void> {
+  this.failedLoginAttempts = 0;
+  this.lockUntil = undefined;
+  await this.save();
+};
+
+UserSchema.methods.isLocked = function (): boolean {
+  if (!this.lockUntil) return false;
+  return this.lockUntil > new Date();
 };
 
 export const User: Model<IUser> = mongoose.model<IUser>('User', UserSchema);
