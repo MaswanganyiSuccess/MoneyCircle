@@ -52,9 +52,9 @@ jobs:
         env:
           DEPLOY_URL: ${{ secrets.DEPLOY_URL || 'https://moneycircle-api.onrender.com' }}
         run: |
-          echo "🔍 Checking deployment health at ${DEPLOY_URL}/api/health"
+          echo "🔍 Checking deployment health at ${DEPLOY_URL}/health"
           for i in {1..15}; do
-            if curl -f -s -o /dev/null "${DEPLOY_URL}/api/health"; then
+            if curl -f -s -o /dev/null "${DEPLOY_URL}/health"; then
               echo "✅ Health check passed!"
               exit 0
             fi
