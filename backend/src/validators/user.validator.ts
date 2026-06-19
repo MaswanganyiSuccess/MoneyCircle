@@ -5,11 +5,11 @@ export const updateProfileSchema = z.object({
   lastName: z.string().min(1).max(50).optional(),
   phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/).optional(),
   address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    province: z.string().optional(),
-    postalCode: z.string().optional(),
-    country: z.string().optional(),
+    street: z.string(),
+    city: z.string(),
+    province: z.string(),
+    postalCode: z.string(),
+    country: z.string(),
   }).optional(),
 });
 
