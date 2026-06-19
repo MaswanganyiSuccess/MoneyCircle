@@ -22,13 +22,14 @@ import { User } from '../models/User.model';
 // Increase Jest timeout to 5 minutes (300 seconds)
 jest.setTimeout(300000);
 
+// 👇 Updated test user credentials
 const testUser = {
-  email: 'shared@example.com',
-  password: 'Test@1234',
-  firstName: 'Shared',
-  lastName: 'User',
-  phoneNumber: '+27123456789',
-  idNumber: '1234567890123',
+  email: 'testuser@moneycircle.com',
+  password: 'Secure@Pass123',
+  firstName: 'Test',
+  lastName: 'Account',
+  phoneNumber: '+27821234567',
+  idNumber: '9876543210987',
   role: 'borrower',
 };
 
