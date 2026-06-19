@@ -11,19 +11,18 @@ import routes from './routes';
 
 const app = express();
 
-// Middleware
-app.use(helmet());
-app.use(cors({ origin: config.corsOrigin }));
-app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ============================================================
+// ✅ HEALTH CHECKS – MUST BE FIRST!
+// These routes are placed before any middleware to guarantee
+// they are never blocked by CORS, authentication, or other
+// middleware that might interfere.
+// ============================================================
 
-// Logging
-if (config.nodeEnv !== 'test') {
-  app.use(morgan('combined'));
-}
-
-// ✅ Direct health check – guaranteed to work
+/**
+ * GET /api/health
+ * Basic health check – returns service status.
+ * Used by Render's health checks and GitHub Actions.
+ */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -32,10 +31,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mount API routes
-app.use('/api', routes);
-
-// Root health check (backup)
+/**
+ * GET /health
+ * Alias for /api/health – also works at root level.
+ */
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -44,9 +43,48 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Error handlers
+// ============================================================
+// MIDDLEWARE
+// ============================================================
+
+// Security headers
+app.use(helmet());
+
+// CORS – allow only configured origin
+app.use(cors({ origin: config.corsOrigin }));
+
+// Compress responses
+app.use(compression());
+
+// JSON and URL-encoded body parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// HTTP request logging (skip in test environment)
+if (config.nodeEnv !== 'test') {
+  app.use(morgan('combined'));
+}
+
+// ============================================================
+// API ROUTES
+// ============================================================
+
+// Mount all API routes under /api
+app.use('/api', routes);
+
+// ============================================================
+// ERROR HANDLING
+// ============================================================
+
+// 404 handler for unmatched routes
 app.use(notFoundHandler);
+
+// Global error handler (must be last)
 app.use(errorHandler);
+
+// ============================================================
+// DATABASE CONNECTION
+// ============================================================
 
 connectDB();
 
