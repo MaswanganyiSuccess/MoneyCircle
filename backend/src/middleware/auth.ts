@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 import { User } from '../models/User.model';
 import { sendError } from '../utils/helpers';
-import { AuthenticatedRequest } from '../types';
+import { AuthenticatedRequest, TokenPayload } from '../types';
+import { authService } from '../services/auth.service';
 
-export const authenticate = async (
+export const authenticateJWT = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -18,9 +19,13 @@ export const authenticate = async (
       return;
     }
 
-    const decoded = jwt.verify(token, config.jwtSecret) as { id: string };
+    const decoded = await authService.verifyAccessToken(token);
+    if (!decoded) {
+      sendError(res, 'Invalid or expired token', 401);
+      return;
+    }
 
-    const user = await User.findById(decoded.id).select('-passwordHash');
+    const user = await User.findById(decoded.id).select('-passwordHash -refreshToken -resetPasswordToken -resetPasswordExpires');
 
     if (!user) {
       sendError(res, 'User not found', 401);
@@ -44,3 +49,6 @@ export const requireRole = (...roles: string[]) => {
     next();
   };
 };
+
+export const requireBorrower = requireRole('borrower');
+export const requireLender = requireRole('lender');
