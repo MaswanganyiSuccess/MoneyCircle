@@ -26,7 +26,7 @@ if (config.nodeEnv !== 'test') {
 // ✅ All API routes mounted at /api
 app.use('/api', routes);
 
-// ✅ Root health check (backup – works at /health)
+// ✅ Root health check (backup)
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -39,7 +39,6 @@ app.get('/health', (req, res) => {
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Database connection
 connectDB();
 
 export default app;
