@@ -1,15 +1,13 @@
-name: CI
+name: Deploy
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
     branches: [ main ]
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,7 +27,17 @@ jobs:
         run: npm run build
         working-directory: backend
 
-      - name: Run lint (optional)
-        run: npm run lint || true
-        working-directory: backend
-        continue-on-error: true
+      - name: Deploy to Production
+        run: |
+          echo "🚀 Deploying to production server..."
+          # Add your deployment commands here
+          # Examples:
+          # - Deploy to VPS via SSH
+          # - Deploy to AWS Elastic Beanstalk
+          # - Deploy to Heroku
+          # - Deploy to Azure App Service
+
+      - name: Health check
+        run: |
+          echo "🔍 Checking deployment health..."
+          # Add health check endpoint verification

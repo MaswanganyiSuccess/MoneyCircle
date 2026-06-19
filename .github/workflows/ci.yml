@@ -25,11 +25,24 @@ jobs:
         run: npm ci
         working-directory: backend
 
+      - name: Lint code
+        run: npm run lint
+        working-directory: backend
+        continue-on-error: true
+
       - name: Build TypeScript
         run: npm run build
         working-directory: backend
 
-      - name: Run lint (optional)
-        run: npm run lint || true
+      - name: Run tests
+        run: npm test
         working-directory: backend
-        continue-on-error: true
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/moneycircle_test
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: backend/coverage/
