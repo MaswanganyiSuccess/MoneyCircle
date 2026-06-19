@@ -1,11 +1,16 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes';
 import authRoutes from './auth.routes';
+import userRoutes from './user.routes';
+import creditRoutes from './credit.routes';
+import loanRoutes from './loan.routes';   
 
 const router = Router();
 
-// ✅ This makes /api/health work
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/credit', creditRoutes);
+router.use('/loans', loanRoutes);         
 
 export default router;
