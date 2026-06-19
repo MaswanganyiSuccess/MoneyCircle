@@ -39,7 +39,7 @@ jobs:
         working-directory: backend
         env:
           NODE_ENV: test
-          MONGODB_URI: mongodb://localhost:27017/moneycircle_test
+          MONGODB_URI_TEST: ${{ secrets.MONGODB_URI_TEST }}
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4

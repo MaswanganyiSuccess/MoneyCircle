@@ -112,18 +112,6 @@ UserSchema.index({ role: 1 });
 UserSchema.index({ refreshToken: 1 }, { sparse: true });
 UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
 
-// Password hashing middleware
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('passwordHash')) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (error: any) {
-    next(error);
-  }
-});
-
 // Instance methods
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
