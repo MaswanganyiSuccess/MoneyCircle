@@ -9,6 +9,14 @@ export interface ICreditReport extends Document {
   paymentHistoryPercent: number;
   creditGrade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E';
   rawData?: any;
+  // --- Scoring fields ---
+  bankStatementUploaded: boolean;
+  employmentMonths: number;
+  onTimePayments: number;
+  earlySettlements: number;
+  creditUtilization: number;
+  recentHardInquiries: number;
+  hasDefaultsOrJudgments: boolean;
   createdAt: Date;
 }
 
@@ -53,6 +61,14 @@ const CreditReportSchema = new Schema<ICreditReport>(
     rawData: {
       type: Schema.Types.Mixed,
     },
+    // --- Scoring fields ---
+    bankStatementUploaded: { type: Boolean, default: false },
+    employmentMonths: { type: Number, default: 0 },
+    onTimePayments: { type: Number, default: 0 },
+    earlySettlements: { type: Number, default: 0 },
+    creditUtilization: { type: Number, default: 0 },
+    recentHardInquiries: { type: Number, default: 0 },
+    hasDefaultsOrJudgments: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
