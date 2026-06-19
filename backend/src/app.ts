@@ -23,10 +23,19 @@ if (config.nodeEnv !== 'test') {
   app.use(morgan('combined'));
 }
 
-// ✅ All API routes mounted at /api
+// ✅ Direct health check – guaranteed to work
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    environment: config.nodeEnv,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Mount API routes
 app.use('/api', routes);
 
-// ✅ Root health check (backup)
+// Root health check (backup)
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
