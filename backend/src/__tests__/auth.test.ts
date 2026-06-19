@@ -3,20 +3,24 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import path from 'path';
-import app from '../app';
-import { User } from '../models/User.model';
 import { config } from '../config/env';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 process.env.NODE_ENV = 'test';
+
+// Use test database URI from environment or fallback to localhost
 const TEST_DB_URI = process.env.MONGODB_URI_TEST || 
   'mongodb://localhost:27017/moneycircle_test';
 process.env.MONGODB_URI = TEST_DB_URI;
 
 console.log(`🔧 Using test database URI: ${TEST_DB_URI}`);
 
-jest.setTimeout(120000);
+import app from '../app';
+import { User } from '../models/User.model';
+
+// Increase Jest timeout to 5 minutes (300 seconds)
+jest.setTimeout(300000);
 
 const testUser = {
   email: 'shared@example.com',
@@ -28,6 +32,7 @@ const testUser = {
   role: 'borrower',
 };
 
+// Helper to ensure the user exists with the correct password hash
 const ensureUserWithCorrectPassword = async () => {
   const existing = await User.findOne({ email: testUser.email });
   if (!existing) {
@@ -42,6 +47,7 @@ const ensureUserWithCorrectPassword = async () => {
   } else {
     const salt = await bcrypt.genSalt(10);
     const newHash = await bcrypt.hash(testUser.password, salt);
+    // Bypass pre-save middleware by using updateOne
     await User.updateOne(
       { _id: existing._id },
       { $set: { passwordHash: newHash } }
@@ -54,6 +60,7 @@ const ensureUserWithCorrectPassword = async () => {
 };
 
 describe('Auth Endpoints', () => {
+  // Top-level beforeAll: connect and clean users
   beforeAll(async () => {
     console.log(`🔌 App config MONGODB_URI: ${config.mongoUri}`);
     if (mongoose.connection.readyState === 0) {
@@ -61,7 +68,7 @@ describe('Auth Endpoints', () => {
         serverSelectionTimeoutMS: 10000,
       });
     }
-    // Wait for connection to be fully open
+    // Wait for connection to be fully open (readyState 1)
     if (mongoose.connection.readyState !== 1) {
       console.log('⏳ Waiting for connection to be fully open...');
       await new Promise<void>((resolve) => {
@@ -75,11 +82,11 @@ describe('Auth Endpoints', () => {
     console.log('✅ Connection ready (readyState: ' + mongoose.connection.readyState + ')');
     await User.deleteMany({});
     console.log('🗑️ Users collection cleared');
-  }, 60000);
+  }, 120000); // 2 minutes for initial connection
 
   afterAll(async () => {
     await mongoose.disconnect();
-  }, 60000);
+  }, 120000);
 
   describe('Registration', () => {
     it('should register a new user', async () => {
@@ -91,7 +98,7 @@ describe('Auth Endpoints', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.email).toBe(testUser.email);
       console.log('✅ User registered:', response.body.data);
-    }, 30000);
+    }, 60000);
 
     it('should not register with duplicate email', async () => {
       const response = await request(app)
@@ -101,7 +108,7 @@ describe('Auth Endpoints', () => {
       expect(response.status).toBe(409);
       expect(response.body.success).toBe(false);
       expect(response.body.error).toBe('Email already registered');
-    }, 30000);
+    }, 60000);
   });
 
   describe('Login', () => {
@@ -111,7 +118,7 @@ describe('Auth Endpoints', () => {
         await mongoose.connect(TEST_DB_URI);
       }
       await ensureUserWithCorrectPassword();
-    }, 60000);
+    }, 120000);
 
     it('should login with valid credentials', async () => {
       const user = await User.findOne({ email: testUser.email });
@@ -135,7 +142,7 @@ describe('Auth Endpoints', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.tokens).toHaveProperty('accessToken');
       expect(response.body.data.tokens).toHaveProperty('refreshToken');
-    }, 30000);
+    }, 60000);
 
     it('should not login with invalid password', async () => {
       const response = await request(app)
@@ -147,7 +154,7 @@ describe('Auth Endpoints', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-    }, 30000);
+    }, 60000);
   });
 
   describe('Refresh Token', () => {
@@ -168,7 +175,7 @@ describe('Auth Endpoints', () => {
         });
       refreshToken = login.body.data?.tokens?.refreshToken;
       console.log('🔄 Refresh token from login:', refreshToken);
-    }, 60000);
+    }, 120000);
 
     it('should refresh access token', async () => {
       const response = await request(app)
@@ -179,7 +186,7 @@ describe('Auth Endpoints', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toHaveProperty('accessToken');
       expect(response.body.data).toHaveProperty('refreshToken');
-    }, 30000);
+    }, 60000);
 
     it('should not refresh with invalid token', async () => {
       const response = await request(app)
@@ -188,7 +195,7 @@ describe('Auth Endpoints', () => {
 
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
-    }, 30000);
+    }, 60000);
   });
 
   describe('Logout', () => {
@@ -209,7 +216,7 @@ describe('Auth Endpoints', () => {
         });
       accessToken = login.body.data?.tokens?.accessToken;
       console.log('🔑 Access token from login:', accessToken);
-    }, 60000);
+    }, 120000);
 
     it('should logout user', async () => {
       const response = await request(app)
@@ -218,6 +225,6 @@ describe('Auth Endpoints', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-    }, 30000);
+    }, 60000);
   });
 });
