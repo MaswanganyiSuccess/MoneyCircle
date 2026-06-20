@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IAuditLog extends Document {
   userId: mongoose.Types.ObjectId;
   action: string;
-  ipAddress: string;
+  ipAddress?: string;
   userAgent?: string;
   timestamp: Date;
   metadata?: any;
@@ -23,10 +23,11 @@ const AuditLogSchema = new Schema<IAuditLog>(
     },
     ipAddress: {
       type: String,
-      required: true,
+      default: '',
     },
     userAgent: {
       type: String,
+      default: '',
     },
     timestamp: {
       type: Date,

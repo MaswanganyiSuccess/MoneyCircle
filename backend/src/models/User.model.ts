@@ -156,7 +156,7 @@ UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
 UserSchema.index({ status: 1 });
 UserSchema.index({ deletedAt: 1 });
 
-// Soft Delete Middleware
+// ---------- Soft Delete Middleware ----------
 UserSchema.pre('find', function () {
   this.where({ deletedAt: null });
 });
@@ -167,19 +167,10 @@ UserSchema.pre('countDocuments', function () {
   this.where({ deletedAt: null });
 });
 
-// Password hashing middleware
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('passwordHash')) return next();
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
-    next();
-  } catch (error: any) {
-    next(error);
-  }
-});
+// ❌ PRE-SAVE HOOK REMOVED – Password hashing is handled by AuthService
+// UserSchema.pre('save', ...) has been removed.
 
-// Instance methods
+// ---------- Instance Methods ----------
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
