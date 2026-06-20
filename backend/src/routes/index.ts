@@ -8,12 +8,13 @@ import investmentRoutes from './investment.routes';
 import { authenticateJWT, requireLender } from '../middleware/auth';
 import { BalanceService } from '../services/balance.service';
 import { sendSuccess, sendError } from '../utils/helpers';
+import { InvestmentController } from '../controllers/investment.controller';
 
 const router = Router();
 
-// ============================================
-// BALANCE ROUTES – Directly in index.ts
-// ============================================
+// ==============================
+// Balance Routes
+// ==============================
 router.get('/balance/test', (req, res) => {
   res.json({ message: 'Balance routes are working!' });
 });
@@ -40,9 +41,17 @@ router.post('/balance/deposit', authenticateJWT, requireLender, async (req: any,
   }
 });
 
-// ============================================
-// OTHER ROUTES
-// ============================================
+// ==============================
+// Investment Routes (missing ones)
+// ==============================
+router.get('/loans/:id/investors', authenticateJWT, requireLender, InvestmentController.getLoanInvestors);
+router.get('/lender/investments', authenticateJWT, requireLender, InvestmentController.getLenderInvestments);
+router.post('/lender/auto-invest', authenticateJWT, requireLender, InvestmentController.autoInvest);
+router.get('/lender/dashboard', authenticateJWT, requireLender, InvestmentController.getLenderDashboard);
+
+// ==============================
+// Other Routes
+// ==============================
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);

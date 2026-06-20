@@ -19,7 +19,7 @@ export interface ILoan extends Document {
   dtiAtApplication?: number;
   creditGradeAtApplication?: string;
 
-  // ---- NEW INVESTMENT FIELDS ----
+  // ---- INVESTMENT FIELDS ----
   fundedAmount: number;
   remainingAmount: number;
   expiryDate: Date;
@@ -102,7 +102,7 @@ const LoanSchema = new Schema<ILoan>(
     dtiAtApplication: Number,
     creditGradeAtApplication: String,
 
-    // ---- NEW INVESTMENT FIELDS (inside schema) ----
+    // ---- INVESTMENT FIELDS ----
     fundedAmount: {
       type: Number,
       default: 0,
@@ -130,30 +130,28 @@ const LoanSchema = new Schema<ILoan>(
   { timestamps: true }
 );
 
-// Indexes (existing + new)
+// Indexes
 LoanSchema.index({ borrowerId: 1 });
 LoanSchema.index({ status: 1, createdAt: -1 });
 LoanSchema.index({ interestRate: 1 });
 LoanSchema.index({ amount: 1, termMonths: 1 });
 LoanSchema.index({ status: 1, lenderId: 1 });
-LoanSchema.index({ expiryDate: 1 });      // for cron job
-LoanSchema.index({ isFullyFunded: 1 });   // for filtering
+LoanSchema.index({ expiryDate: 1 });
+LoanSchema.index({ isFullyFunded: 1 });
 
-// Virtual: investors (populated on demand)
+// Virtuals
 LoanSchema.virtual('investors', {
   ref: 'Investment',
   localField: '_id',
   foreignField: 'loanId',
 });
 
-// Virtual: repayments (populated on demand)
 LoanSchema.virtual('repayments', {
   ref: 'Repayment',
   localField: '_id',
   foreignField: 'loanId',
 });
 
-// Ensure virtuals are included in JSON output
 LoanSchema.set('toJSON', { virtuals: true });
 LoanSchema.set('toObject', { virtuals: true });
 

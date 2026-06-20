@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Sun, Moon, Laptop } from 'lucide-react';
-
+import authService from "@/api";
+//import authService from '/src/api/index.ts'
 export default function LandingPage() {
     const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
         const stored = localStorage.getItem('theme');
         return stored === 'dark' || stored === 'light' ? stored : 'system';
     });
-
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [fullName, setFullName] = useState(''); 
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    
     useEffect(() => {
         const root = window.document.documentElement;
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -14,12 +21,36 @@ export default function LandingPage() {
         root.classList.toggle('dark', isDark);
         localStorage.setItem('theme', theme);
     }, [theme]);
-
     const changeTheme = (newTheme: 'light' | 'dark' | 'system') => {
         setTheme(newTheme);
     };
-    
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setErrorMessage('');
+        setSuccessMessage('');
+        setLoading(true);
+
+        try {
+            if (authMode === 'login') {
+                // Trigger login API call
+                const response = await authService.login({ email, password });
+                setSuccessMessage(response.message || 'Login successful!');
+
+                // Redirect or update local application layout state here
+                console.log('Logged-in user context:', response.data.user);
+            } else {
+                // Placeholder placeholder until signup variables are dropped in
+                alert('Signup integration is up next!');
+            }
+        } catch (err) {
+            // Displays precise backend error message returned by interceptor
+            setErrorMessage(err.message || 'Authentication failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -103,24 +134,27 @@ export default function LandingPage() {
                 </div>
                     <div className="col-span-1 md:col-span-7 flex flex-col justify-center px-6 py-6 md:py-12 sm:px-16 md:px-20 overflow-y-auto bg-background/30 dark:bg-background/10">
                         <div className="w-full max-w-sm mx-auto space-y-2 text-center md:text-left ">
-                            <h3 className="text-3xl font-bold tracking-tight">
+                            <h3 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
                                 {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-normal">
+                            <p className="text-sm text-muted-foreground leading-normal my-2">
                                 {authMode === 'login'
                                     ? 'Enter your email and password to access your account!'
                                     : 'Sign up to start borrowing or investing.'}
                             </p>
                         </div>
+                        {errorMessage && (
+                            <div className="w-full max-w-sm mx-auto p-3 mb-4 rounded-xl bg-destructive/10 border border-destructive/20 text-xs font-medium text-destructive text-center">
+                                {errorMessage}
+                            </div>
+                        )}
 
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                // Placeholder auth logic
-                                alert(`${authMode === 'login' ? 'Logging in' : 'Signing up'}...`);
-                            }}
-                            className="w-full max-w-sm mx-auto space-y-5"
-                        >
+                        {successMessage && (
+                            <div className="w-full max-w-sm mx-auto p-3 mb-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-medium text-emerald-500 text-center">
+                                {successMessage}
+                            </div>
+                        )}
+                        <form onSubmit={handleSubmit} className="w-full max-w-sm mx-auto space-y-5">
                             {authMode === 'signup' && (
                                 <div className="space-y-1.5">
                                     <div className="flex justify-between items-center">
@@ -131,8 +165,12 @@ export default function LandingPage() {
                                     </div>
                                     <input
                                         type="text"
+                                        required
+                                        disabled={loading}
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
                                         placeholder="Enter your full name"
-                                        className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none"
+                                        className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none disabled:opacity-50"
                                     />
                                 </div>
                             )}
@@ -146,8 +184,12 @@ export default function LandingPage() {
                                 </div>
                                 <input
                                     type="email"
+                                    required
+                                    disabled={loading}
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email"
-                                    className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none"
+                                    className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none disabled:opacity-50"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -166,8 +208,12 @@ export default function LandingPage() {
                                 </div>
                                 <input
                                     type="password"
+                                    required
+                                    disabled={loading}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none"
+                                    className="flex h-11 w-full rounded-xl border border-input bg-background/50 dark:bg-black/20 px-3.5 py-2 text-sm shadow-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary focus-visible:outline-none disabled:opacity-50"
                                 />
                             </div>
 
@@ -176,7 +222,8 @@ export default function LandingPage() {
                                     <input
                                         type="checkbox"
                                         id="remember"
-                                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary bg-background/50"
+                                        disabled={loading}
+                                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary bg-background/50 disabled:opacity-50"
                                     />
                                     <label
                                         htmlFor="remember"
@@ -189,14 +236,15 @@ export default function LandingPage() {
 
                             <button
                                 type="submit"
-                                className="w-full flex h-11 items-center justify-center rounded-xl bg-foreground text-background font-medium text-sm shadow transition-all hover:opacity-90 active:scale-[0.99] mt-2"
+                                className="w-full flex h-11 items-center justify-center rounded-xl bg-primary text-primary-foreground font-medium text-sm shadow transition-all hover:opacity-90 active:scale-[0.99] mt-2"
                             >
-                                {authMode === 'login' ? 'Sign In' : 'Sign Up'}
+                                {loading ? 'Processing...' : authMode === 'login' ? 'Sign In' : 'Sign Up'}
                             </button>
 
                             <button
                                 type="button"
-                                className="w-full flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background/40 hover:bg-accent text-sm font-medium transition-all shadow-sm active:scale-[0.99]"
+                                disabled={loading}
+                                className="w-full flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background/40 hover:bg-accent text-sm font-medium transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
                             >
                                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
