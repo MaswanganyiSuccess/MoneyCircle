@@ -11,6 +11,8 @@ import routes from './routes';
 
 const app = express();
 
+app.set('trust proxy', true);
+
 // ============================================================
 // ✅ HEALTH CHECKS – MUST BE FIRST!
 // These routes are placed before any middleware to guarantee

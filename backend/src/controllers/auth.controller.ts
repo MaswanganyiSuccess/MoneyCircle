@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/auth.service';
+import { MongoServerError } from 'mongodb';
 import { sendSuccess, sendError } from '../utils/helpers';
 import {
   registerSchema,
@@ -14,11 +15,15 @@ export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const validatedData = registerSchema.parse(req.body);
-
       const user = await authService.register(validatedData);
-
       sendSuccess(res, user, 'User registered successfully', 201);
     } catch (error) {
+      // Handle duplicate key error (MongoDB code 11000)
+      if (error instanceof MongoServerError && error.code === 11000) {
+        const field = Object.keys(error.keyPattern)[0];
+        sendError(res, `${field} already exists`, 409);
+        return;
+      }
       next(error);
     }
   }
