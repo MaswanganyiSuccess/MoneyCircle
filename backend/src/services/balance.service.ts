@@ -26,6 +26,8 @@ export class BalanceService {
     await AuditLog.create({
       userId: lenderId,
       action: 'DEPOSIT',
+      ipAddress: '',
+      userAgent: '',
       metadata: { amount, newBalance: balance.availableBalance },
     });
 

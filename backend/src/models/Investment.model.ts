@@ -45,7 +45,6 @@ const InvestmentSchema = new Schema<IInvestment>(
   { timestamps: true }
 );
 
-// Indexes
 InvestmentSchema.index({ loanId: 1 });
 InvestmentSchema.index({ lenderId: 1 });
 InvestmentSchema.index({ status: 1 });

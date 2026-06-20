@@ -86,7 +86,7 @@ export class InvestmentService {
       if (!balance) throw new AppError('Lender balance not found. Please deposit funds.', 404);
       if (balance.availableBalance < amount) throw new AppError('Insufficient available balance', 400);
 
-      // 5. Apply 75% cash limit rule (optional – can be configurable)
+      // 5. Apply 75% cash limit rule
       const maxAvailable = balance.availableBalance * 0.75;
       if (amount > maxAvailable) {
         throw new AppError(`You can only invest up to 75% of your available balance (R${maxAvailable.toFixed(2)})`, 400);
@@ -136,7 +136,6 @@ export class InvestmentService {
 
       await session.commitTransaction();
 
-      // Return the result
       return {
         investment,
         loan,
@@ -252,7 +251,6 @@ export class InvestmentService {
     const fundedLoans: string[] = [];
 
     for (const loan of loans) {
-      // Calculate investment amount (max 25% of remaining or user's limit)
       const maxPerLoan = criteria.maxInvestmentPerLoan || 10000;
       const investmentAmount = Math.min(
         loan.remainingAmount,
