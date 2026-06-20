@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { IInvestment } from './Investment.model';
 
 export interface ILoan extends Document {
   borrowerId: mongoose.Types.ObjectId;
@@ -17,6 +18,17 @@ export interface ILoan extends Document {
   affordabilityCheckPassed: boolean;
   dtiAtApplication?: number;
   creditGradeAtApplication?: string;
+
+  // ---- NEW INVESTMENT FIELDS ----
+  fundedAmount: number;
+  remainingAmount: number;
+  expiryDate: Date;
+  isFullyFunded: boolean;
+
+  // Virtuals
+  investors?: IInvestment[];
+  repayments?: any[];
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,7 +76,7 @@ const LoanSchema = new Schema<ILoan>(
     servicingFee: {
       type: Number,
       default: function () {
-        return (this as any).amount * 0.005; // 0.5% of loan amount
+        return (this as any).amount * 0.005;
       },
     },
     purpose: {
@@ -89,22 +101,60 @@ const LoanSchema = new Schema<ILoan>(
     },
     dtiAtApplication: Number,
     creditGradeAtApplication: String,
+
+    // ---- NEW INVESTMENT FIELDS (inside schema) ----
+    fundedAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    remainingAmount: {
+      type: Number,
+      default: function () {
+        return (this as any).amount;
+      },
+    },
+    expiryDate: {
+      type: Date,
+      default: function () {
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        return date;
+      },
+    },
+    isFullyFunded: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-// Indexes
+// Indexes (existing + new)
 LoanSchema.index({ borrowerId: 1 });
 LoanSchema.index({ status: 1, createdAt: -1 });
 LoanSchema.index({ interestRate: 1 });
 LoanSchema.index({ amount: 1, termMonths: 1 });
 LoanSchema.index({ status: 1, lenderId: 1 });
+LoanSchema.index({ expiryDate: 1 });      // for cron job
+LoanSchema.index({ isFullyFunded: 1 });   // for filtering
 
-// Virtual for repayment schedule (populated on demand)
+// Virtual: investors (populated on demand)
+LoanSchema.virtual('investors', {
+  ref: 'Investment',
+  localField: '_id',
+  foreignField: 'loanId',
+});
+
+// Virtual: repayments (populated on demand)
 LoanSchema.virtual('repayments', {
   ref: 'Repayment',
   localField: '_id',
   foreignField: 'loanId',
 });
+
+// Ensure virtuals are included in JSON output
+LoanSchema.set('toJSON', { virtuals: true });
+LoanSchema.set('toObject', { virtuals: true });
 
 export const Loan: Model<ILoan> = mongoose.model<ILoan>('Loan', LoanSchema);
