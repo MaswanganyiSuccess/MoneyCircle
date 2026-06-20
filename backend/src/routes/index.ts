@@ -5,16 +5,49 @@ import userRoutes from './user.routes';
 import creditRoutes from './credit.routes';
 import loanRoutes from './loan.routes';
 import investmentRoutes from './investment.routes';
-import balanceRoutes from './balance.routes';   // ✅ Add this line
+import { authenticateJWT, requireLender } from '../middleware/auth';
+import { BalanceService } from '../services/balance.service';
+import { sendSuccess, sendError } from '../utils/helpers';
 
 const router = Router();
 
+// ============================================
+// BALANCE ROUTES – Directly in index.ts
+// ============================================
+router.get('/balance/test', (req, res) => {
+  res.json({ message: 'Balance routes are working!' });
+});
+
+router.get('/balance', authenticateJWT, requireLender, async (req: any, res) => {
+  try {
+    const balance = await BalanceService.getBalance(req.user.id);
+    sendSuccess(res, balance, 'Balance retrieved');
+  } catch (error) {
+    sendError(res, (error as Error).message, 500);
+  }
+});
+
+router.post('/balance/deposit', authenticateJWT, requireLender, async (req: any, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) {
+      return sendError(res, 'Amount must be greater than 0', 400);
+    }
+    const balance = await BalanceService.deposit(req.user.id, amount);
+    sendSuccess(res, balance, 'Deposit successful');
+  } catch (error) {
+    sendError(res, (error as Error).message, 500);
+  }
+});
+
+// ============================================
+// OTHER ROUTES
+// ============================================
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/credit', creditRoutes);
 router.use('/loans', loanRoutes);
 router.use('/investments', investmentRoutes);
-router.use('/balance', balanceRoutes);          // ✅ Add this line
 
 export default router;
