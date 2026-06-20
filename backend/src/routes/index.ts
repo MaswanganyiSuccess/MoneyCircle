@@ -5,21 +5,16 @@ import userRoutes from './user.routes';
 import creditRoutes from './credit.routes';
 import loanRoutes from './loan.routes';
 import investmentRoutes from './investment.routes';
-import balanceRoutes from './balance.routes';
+import balanceRoutes from './balance.routes';   
 
 const router = Router();
 
-// Health check – will be available at /api/health
 router.use('/health', healthRoutes);
-
-// Auth, users, credit, loans – all under /api
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/credit', creditRoutes);
 router.use('/loans', loanRoutes);
-router.use('/balance', balanceRoutes);
-
-// Investment routes – mounted at /investments (so full path = /api/investments)
 router.use('/investments', investmentRoutes);
+router.use('/balance', balanceRoutes);          
 
 export default router;
