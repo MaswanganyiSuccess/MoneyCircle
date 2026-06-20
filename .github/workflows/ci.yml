@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ develop ]
+    branches-ignore: [ main ]   # Runs on every branch except main
   pull_request:
-    branches: [ main ]
+    branches: [ main ]          # Runs on PRs targeting main
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'   # Updated from 20 to 24
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
@@ -28,7 +28,7 @@ jobs:
       - name: Lint code
         run: npm run lint
         working-directory: backend
-        continue-on-error: true
+        continue-on-error: false
 
       - name: Build TypeScript
         run: npm run build
@@ -41,7 +41,7 @@ jobs:
           NODE_ENV: test
           MONGODB_URI_TEST: ${{ secrets.MONGODB_URI_TEST }}
 
-      - name: Upload coverage
+      - name: Upload coverage (optional)
         uses: actions/upload-artifact@v4
         with:
           name: coverage

@@ -2,8 +2,8 @@ name: Deploy
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:  # Allows manual trigger from Actions tab
+    branches: [ main ]          # Triggers after a PR is merged
+  workflow_dispatch:            # Manual trigger from the Actions tab
 
 jobs:
   deploy:
@@ -28,12 +28,12 @@ jobs:
         run: npm run build
         working-directory: backend
 
-      - name: Trigger Render Deploy (Optional)
+      - name: Trigger Render Deploy (if configured)
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo "⚠️ RENDER_DEPLOY_HOOK not set. Skipping trigger (Render auto-deploy will still work)."
+            echo "⚠️ RENDER_DEPLOY_HOOK not set. Skipping (auto-deploy may still work)."
             exit 0
           fi
           echo "🚀 Triggering Render deployment..."
