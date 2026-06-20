@@ -4,10 +4,10 @@ import { authenticateJWT, requireLender } from '../middleware/auth';
 
 const router = Router();
 
-// Available loans (lender view)
+// Available loans (lender view) – enhanced
 router.get('/loans/available', authenticateJWT, requireLender, InvestmentController.getAvailableLoans);
 
-// Fund a loan
+// Fund a loan (partial)
 router.post('/loans/:id/fund', authenticateJWT, requireLender, InvestmentController.fundLoan);
 
 // Investors for a loan

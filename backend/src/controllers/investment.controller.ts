@@ -25,7 +25,7 @@ const listQuerySchema = z.object({
 });
 
 export class InvestmentController {
-  // GET /api/loans/available
+  // GET /api/loans/available (enhanced with filters)
   static async getAvailableLoans(req: AuthenticatedRequest, res: Response) {
     try {
       const query = listQuerySchema.parse(req.query);
@@ -51,7 +51,7 @@ export class InvestmentController {
     }
   }
 
-  // POST /api/loans/:id/fund
+  // POST /api/loans/:id/fund (partial funding)
   static async fundLoan(req: AuthenticatedRequest, res: Response) {
     try {
       const { amount } = fundLoanSchema.parse(req.body);
