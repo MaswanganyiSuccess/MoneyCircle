@@ -1,17 +1,18 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcrypt';
+import { validateSAID } from '../utils/id-validator';
 
 export interface IUser extends Document {
+  // Core identity
   email: string;
   passwordHash: string;
   firstName: string;
   lastName: string;
   phoneNumber: string;
   idNumber: string;
-  monthlyIncome?: number;  
   role: 'borrower' | 'lender' | 'admin';
-  
-  // Profile & KYC
+
+  // Profile & KYC (basic – extended data goes to BorrowerProfile)
   avatar?: string;
   kycDocuments?: {
     idDocument?: string;
@@ -21,12 +22,12 @@ export interface IUser extends Document {
   status: 'pending' | 'verified' | 'rejected';
   kycStatus: 'pending' | 'verified' | 'rejected';
 
-  // Credit
+  // Credit scoring (summary fields)
   creditGrade?: 'A+' | 'A' | 'B' | 'C' | 'D' | 'E';
   creditScore?: number;
   debtToIncomeRatio?: number;
 
-  // Address
+  // Address (optional – can be stored here or in BorrowerProfile)
   address?: {
     street: string;
     city: string;
@@ -35,7 +36,7 @@ export interface IUser extends Document {
     country: string;
   };
 
-  // Auth
+  // Authentication
   refreshToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -47,10 +48,24 @@ export interface IUser extends Document {
   // Soft delete
   deletedAt?: Date;
 
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
 
-  // Instance methods
+  // ---------- EXTRACTED FROM SA ID ----------
+  dateOfBirth: Date;
+  gender: 'Male' | 'Female';
+  age: number; // convenience – can be computed on the fly
+
+  // ---------- LINK TO BORROWER PROFILE ----------
+  borrowerProfile?: mongoose.Types.ObjectId; // reference to detailed KYC
+
+  // ---------- LOAN AGGREGATES (cached) ----------
+  totalBorrowed: number;   // sum of all loan principals (approved/disbursed)
+  totalRepaid: number;     // total repayments made (principal + interest)
+  totalOutstanding: number;// total remaining balance (principal + interest)
+
+  // ---------- INSTANCE METHODS ----------
   comparePassword(candidatePassword: string): Promise<boolean>;
   incrementFailedAttempts(): Promise<void>;
   resetFailedAttempts(): Promise<void>;
@@ -59,6 +74,7 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
+    // ---------- CORE FIELDS ----------
     email: {
       type: String,
       required: true,
@@ -80,15 +96,23 @@ const UserSchema = new Schema<IUser>(
       required: true,
       unique: true,
       match: /^\d{13}$/,
+      validate: {
+        validator: function (value: string) {
+          return validateSAID(value).isValid;
+        },
+        message: (props: any) => {
+          const result = validateSAID(props.value);
+          return result.errors.join(', ');
+        },
+      },
     },
-    monthlyIncome: { type: Number, default: 0 }, 
     role: {
       type: String,
       enum: ['borrower', 'lender', 'admin'],
       required: true,
     },
 
-    // Profile & KYC
+    // ---------- BASIC KYC (files) ----------
     avatar: { type: String },
     kycDocuments: {
       idDocument: { type: String },
@@ -106,7 +130,7 @@ const UserSchema = new Schema<IUser>(
       default: 'pending',
     },
 
-    // Credit fields
+    // ---------- CREDIT SUMMARY ----------
     creditGrade: {
       type: String,
       enum: ['A+', 'A', 'B', 'C', 'D', 'E'],
@@ -122,7 +146,7 @@ const UserSchema = new Schema<IUser>(
       max: 1,
     },
 
-    // Address
+    // ---------- ADDRESS (optional, can be overridden in BorrowerProfile) ----------
     address: {
       street: String,
       city: String,
@@ -131,7 +155,7 @@ const UserSchema = new Schema<IUser>(
       country: { type: String, default: 'South Africa' },
     },
 
-    // Auth fields
+    // ---------- AUTH ----------
     refreshToken: { type: String },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
@@ -140,13 +164,51 @@ const UserSchema = new Schema<IUser>(
     failedLoginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },
 
-    // Soft delete
+    // ---------- SOFT DELETE ----------
     deletedAt: { type: Date },
+
+    // ---------- NEW: EXTRACTED FROM SA ID ----------
+    dateOfBirth: {
+      type: Date,
+      required: true, // auto‑populated
+    },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female'],
+      required: true,
+    },
+    age: {
+      type: Number,
+      // optional – will be set by pre‑save hook
+    },
+
+    // ---------- NEW: REFERENCE TO DETAILED PROFILE ----------
+    borrowerProfile: {
+      type: Schema.Types.ObjectId,
+      ref: 'BorrowerProfile',
+    },
+
+    // ---------- NEW: LOAN AGGREGATES ----------
+    totalBorrowed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalRepaid: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalOutstanding: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );
 
-// Indexes
+// ---------- INDEXES ----------
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ idNumber: 1 }, { unique: true });
 UserSchema.index({ creditGrade: 1 });
@@ -155,8 +217,9 @@ UserSchema.index({ refreshToken: 1 }, { sparse: true });
 UserSchema.index({ resetPasswordToken: 1 }, { sparse: true });
 UserSchema.index({ status: 1 });
 UserSchema.index({ deletedAt: 1 });
+UserSchema.index({ borrowerProfile: 1 }); // for quick joins
 
-// ---------- Soft Delete Middleware ----------
+// ---------- SOFT DELETE MIDDLEWARE ----------
 UserSchema.pre('find', function () {
   this.where({ deletedAt: null });
 });
@@ -167,10 +230,25 @@ UserSchema.pre('countDocuments', function () {
   this.where({ deletedAt: null });
 });
 
-// ❌ PRE-SAVE HOOK REMOVED – Password hashing is handled by AuthService
-// UserSchema.pre('save', ...) has been removed.
+// ---------- ID VALIDATION & AUTO‑POPULATE HOOK ----------
+UserSchema.pre('save', function (next) {
+  if (this.isModified('idNumber')) {
+    const result = validateSAID(this.idNumber);
 
-// ---------- Instance Methods ----------
+    if (!result.isValid) {
+      return next(new Error(`Invalid South African ID: ${result.errors.join(', ')}`));
+    }
+
+    if (result.parsed) {
+      this.dateOfBirth = result.parsed.dateOfBirth;
+      this.gender = result.parsed.gender;
+      this.age = result.parsed.age;
+    }
+  }
+  next();
+});
+
+// ---------- INSTANCE METHODS ----------
 UserSchema.methods.comparePassword = async function (
   candidatePassword: string
 ): Promise<boolean> {
