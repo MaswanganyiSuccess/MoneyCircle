@@ -9,18 +9,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    # 🚀 FIX: Force Node.js 24 to bypass Node.js 20 deprecation
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5   # v5 supports Node.js 24
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5  # v5 supports Node.js 24
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: backend/package-lock.json
 
@@ -32,18 +28,16 @@ jobs:
         run: npm run build
         working-directory: backend
 
-      - name: Trigger Render Deploy
+      - name: Trigger Render Deploy (Optional)
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-            echo "⚠️ RENDER_DEPLOY_HOOK secret not set. Skipping deployment trigger."
-            echo "ℹ️ Render auto-deploy will still happen if configured."
+            echo "⚠️ RENDER_DEPLOY_HOOK not set. Skipping trigger (Render auto-deploy will still work)."
             exit 0
           fi
           echo "🚀 Triggering Render deployment..."
           curl -X POST "$RENDER_DEPLOY_HOOK"
-          echo "✅ Deployment triggered successfully."
 
       - name: Wait for service to start
         run: sleep 15
@@ -58,8 +52,8 @@ jobs:
               echo "✅ Health check passed!"
               exit 0
             fi
-            echo "⏳ Waiting for service to respond... (attempt $i/15)"
+            echo "⏳ Waiting for service... (attempt $i/15)"
             sleep 10
           done
-          echo "❌ Health check failed after multiple attempts."
+          echo "❌ Health check failed after 15 attempts."
           exit 1
