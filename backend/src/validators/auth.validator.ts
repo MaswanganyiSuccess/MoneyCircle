@@ -12,6 +12,7 @@ export const registerSchema = z.object({
   phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid phone number format'),
   idNumber: z.string().regex(/^\d{13}$/, 'Invalid South African ID number'),
   role: z.enum(['borrower', 'lender']).default('borrower'),
+  monthlyIncome: z.number().min(0).optional(), 
 });
 
 export const loginSchema = z.object({
