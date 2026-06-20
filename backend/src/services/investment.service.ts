@@ -102,9 +102,13 @@ export class InvestmentService {
       });
       await investment.save({ session });
 
-      // 7. Update loan funded amount
-      loan.fundedAmount += amount;
+      // 7. Update loan funded amount – FIX: ensure we update the fields
+      loan.fundedAmount = (loan.fundedAmount || 0) + amount;
       loan.remainingAmount = loan.amount - loan.fundedAmount;
+
+      // Log the update for debugging
+      logger.info(`Funding loan ${loanId}: fundedAmount=${loan.fundedAmount}, remaining=${loan.remainingAmount}`);
+
       if (loan.fundedAmount >= loan.amount) {
         loan.isFullyFunded = true;
         loan.status = 'active';
@@ -136,10 +140,14 @@ export class InvestmentService {
 
       await session.commitTransaction();
 
+      // Fetch the updated loan to confirm the changes
+      const updatedLoan = await Loan.findById(loanId);
+      logger.info(`After commit: fundedAmount=${updatedLoan?.fundedAmount}, remaining=${updatedLoan?.remainingAmount}`);
+
       return {
         investment,
-        loan,
-        remainingAmount: loan.remainingAmount,
+        loan: updatedLoan || loan,
+        remainingAmount: updatedLoan?.remainingAmount || loan.remainingAmount,
       };
     } catch (error) {
       await session.abortTransaction();
@@ -201,8 +209,8 @@ export class InvestmentService {
     return {
       investors,
       total,
-      fundedAmount: loan.fundedAmount,
-      remainingAmount: loan.remainingAmount,
+      fundedAmount: loan.fundedAmount || 0,
+      remainingAmount: loan.remainingAmount || loan.amount,
     };
   }
 
