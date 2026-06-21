@@ -1,0 +1,234 @@
+User:
+  type: object
+  properties:
+    id:
+      type: string
+      example: 60d5f9d4e4b0e4a5a5c9b9b9
+    email:
+      type: string
+      format: email
+    firstName:
+      type: string
+    lastName:
+      type: string
+    phoneNumber:
+      type: string
+    role:
+      type: string
+      enum: [borrower, lender, admin]
+    dateOfBirth:
+      type: string
+      format: date
+    gender:
+      type: string
+      enum: [Male, Female]
+    age:
+      type: integer
+    status:
+      type: string
+      enum: [pending, verified, rejected]
+    kycStatus:
+      type: string
+      enum: [pending, verified, rejected]
+    totalBorrowed:
+      type: number
+    totalRepaid:
+      type: number
+    totalOutstanding:
+      type: number
+    creditGrade:
+      type: string
+    creditScore:
+      type: integer
+    address:
+      $ref: '#/Address'
+    createdAt:
+      type: string
+      format: date-time
+
+Address:
+  type: object
+  properties:
+    street:
+      type: string
+    city:
+      type: string
+    province:
+      type: string
+    postalCode:
+      type: string
+    country:
+      type: string
+
+Loan:
+  type: object
+  properties:
+    id:
+      type: string
+    borrowerId:
+      type: string
+    amount:
+      type: number
+    interestRate:
+      type: number
+    termMonths:
+      type: integer
+    purpose:
+      type: string
+    status:
+      type: string
+      enum: [pending, approved, disbursed, active, completed, defaulted]
+    outstandingBalance:
+      type: number
+    fundedAmount:
+      type: number
+    createdAt:
+      type: string
+      format: date-time
+    updatedAt:
+      type: string
+      format: date-time
+
+Investment:
+  type: object
+  properties:
+    id:
+      type: string
+    lenderId:
+      type: string
+    loanId:
+      type: string
+    amount:
+      type: number
+    expectedReturn:
+      type: number
+    status:
+      type: string
+      enum: [active, matured, withdrawn]
+    createdAt:
+      type: string
+      format: date-time
+
+BorrowerProfile:
+  type: object
+  properties:
+    userId:
+      type: string
+    employment:
+      type: object
+      properties:
+        employerName:
+          type: string
+        employerAddress:
+          type: string
+        employerContact:
+          type: string
+        employmentStatus:
+          type: string
+          enum: [employed, self-employed, unemployed, student, retired]
+    monthlyIncome:
+      type: number
+    deductions:
+      type: number
+    netIncome:
+      type: number
+    dependents:
+      type: integer
+    monthlyExpenses:
+      type: number
+    address:
+      $ref: '#/Address'
+    banking:
+      type: object
+      properties:
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        branchCode:
+          type: string
+        accountType:
+          type: string
+          enum: [current, savings, cheque, investment]
+    emergencyContact:
+      type: object
+      properties:
+        name:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+    documents:
+      type: object
+      properties:
+        idCopy:
+          type: string
+        bankStatements:
+          type: array
+          items:
+            type: string
+        proofOfAddress:
+          type: string
+    verificationStatus:
+      type: string
+      enum: [pending, verified, rejected]
+
+BorrowerProfileInput:
+  type: object
+  properties:
+    employment:
+      type: object
+      required: [employerName, employerAddress, employerContact, employmentStatus]
+      properties:
+        employerName:
+          type: string
+        employerAddress:
+          type: string
+        employerContact:
+          type: string
+        employmentStatus:
+          type: string
+    monthlyIncome:
+      type: number
+    deductions:
+      type: number
+    dependents:
+      type: integer
+    monthlyExpenses:
+      type: number
+    address:
+      $ref: '#/Address'
+    banking:
+      type: object
+      required: [bankName, accountNumber, branchCode, accountType]
+      properties:
+        bankName:
+          type: string
+        accountNumber:
+          type: string
+        branchCode:
+          type: string
+        accountType:
+          type: string
+    emergencyContact:
+      type: object
+      required: [name, relationship, phone]
+      properties:
+        name:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+    documents:
+      type: object
+      properties:
+        idCopy:
+          type: string
+        bankStatements:
+          type: array
+          items:
+            type: string
+        proofOfAddress:
+          type: string

@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: MoneyCircle API
+  description: |
+    MoneyCircle Loan Platform – a peer‑to‑peer lending marketplace.
+    All endpoints require authentication unless noted otherwise.
+  version: 1.0.0
+  contact:
+    name: MoneyCircle Support
+    email: support@moneycircle.co.za
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://moneycircle-api.onrender.com/api
+    description: Production
+  - url: http://localhost:5000/api
+    description: Local development
+
+tags:
+  - name: Health
+    description: Service health checks
+  - name: Auth
+    description: Authentication and user registration
+  - name: Users
+    description: User profile and KYC management
+  - name: Loans
+    description: Loan application, approval, and management
+  - name: Investments
+    description: Lending and investment operations
+  - name: Credit
+    description: Credit scoring and reports
+  - name: Balance
+    description: User balance, deposits, and withdrawals
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Health
+  /health:
+    $ref: './paths/health.yaml#/health'
+  /api/health:
+    $ref: './paths/health.yaml#/apiHealth'
+
+  # Auth
+  /auth/register:
+    $ref: './paths/auth.yaml#/register'
+  /auth/login:
+    $ref: './paths/auth.yaml#/login'
+  /auth/refresh:
+    $ref: './paths/auth.yaml#/refresh'
+  /auth/logout:
+    $ref: './paths/auth.yaml#/logout'
+  /auth/forgot-password:
+    $ref: './paths/auth.yaml#/forgotPassword'
+  /auth/reset-password/{token}:
+    $ref: './paths/auth.yaml#/resetPassword'
+
+  # Users
+  /users/me:
+    $ref: './paths/users.yaml#/getMe'
+  /users/profile:
+    $ref: './paths/users.yaml#/updateProfile'
+  /users/profile/borrower:
+    $ref: './paths/users.yaml#/borrowerProfile'
+  /users/documents:
+    $ref: './paths/users.yaml#/uploadDocuments'
+
+  # Loans
+  /loans:
+    $ref: './paths/loans.yaml#/list'
+  /loans/apply:
+    $ref: './paths/loans.yaml#/apply'
+  /loans/{id}:
+    $ref: './paths/loans.yaml#/get'
+  /loans/{id}/approve:
+    $ref: './paths/loans.yaml#/approve'
+  /loans/{id}/disburse:
+    $ref: './paths/loans.yaml#/disburse'
+  /loans/{id}/repay:
+    $ref: './paths/loans.yaml#/repay'
+  /loans/calculate:
+    $ref: './paths/loans.yaml#/calculate'
+
+  # Investments
+  /investments:
+    $ref: './paths/investments.yaml#/list'
+  /investments/invest:
+    $ref: './paths/investments.yaml#/invest'
+  /investments/{id}:
+    $ref: './paths/investments.yaml#/get'
+  /investments/{id}/withdraw:
+    $ref: './paths/investments.yaml#/withdraw'
+  /investments/returns:
+    $ref: './paths/investments.yaml#/returns'
+
+  # Credit
+  /credit/score:
+    $ref: './paths/credit.yaml#/score'
+  /credit/report:
+    $ref: './paths/credit.yaml#/report'
+  /credit/grade:
+    $ref: './paths/credit.yaml#/grade'
+
+  # Balance
+  /balance:
+    $ref: './paths/balance.yaml#/get'
+  /balance/deposit:
+    $ref: './paths/balance.yaml#/deposit'
+  /balance/withdraw:
+    $ref: './paths/balance.yaml#/withdraw'
+  /balance/transactions:
+    $ref: './paths/balance.yaml#/transactions'
+
+components:
+  securitySchemes:
+    $ref: './components/security.yaml'
+  schemas:
+    $ref: './components/schemas.yaml'
+  responses:
+    $ref: './components/responses.yaml'
+  parameters:
+    $ref: './components/parameters.yaml'

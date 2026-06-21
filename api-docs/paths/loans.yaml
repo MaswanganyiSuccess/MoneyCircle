@@ -1,0 +1,233 @@
+list:
+  get:
+    tags:
+      - Loans
+    summary: List loans (for current user)
+    operationId: listLoans
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/limit'
+      - $ref: '../components/parameters.yaml#/offset'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, approved, disbursed, active, completed, defaulted]
+        description: Filter by loan status
+    responses:
+      '200':
+        description: List of loans
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../components/schemas.yaml#/Loan'
+
+apply:
+  post:
+    tags:
+      - Loans
+    summary: Apply for a loan
+    operationId: applyLoan
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - amount
+              - purpose
+              - termMonths
+            properties:
+              amount:
+                type: number
+                minimum: 100
+                example: 5000
+              purpose:
+                type: string
+                example: Business expansion
+              termMonths:
+                type: integer
+                minimum: 1
+                maximum: 60
+                example: 12
+              interestRate:
+                type: number
+                example: 12.5
+    responses:
+      '201':
+        description: Loan application submitted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/Loan'
+
+get:
+  get:
+    tags:
+      - Loans
+    summary: Get loan details by ID
+    operationId: getLoan
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Loan ID
+    responses:
+      '200':
+        description: Loan details
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/Loan'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+
+approve:
+  put:
+    tags:
+      - Loans
+    summary: Approve a loan (admin only)
+    operationId: approveLoan
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+    responses:
+      '200':
+        description: Loan approved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/Loan'
+
+disburse:
+  put:
+    tags:
+      - Loans
+    summary: Disburse funds (admin only)
+    operationId: disburseLoan
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+    responses:
+      '200':
+        description: Funds disbursed
+
+repay:
+  post:
+    tags:
+      - Loans
+    summary: Make a loan repayment
+    operationId: repayLoan
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - amount
+            properties:
+              amount:
+                type: number
+                minimum: 0
+    responses:
+      '200':
+        description: Repayment recorded
+
+calculate:
+  post:
+    tags:
+      - Loans
+    summary: Calculate loan amortization schedule (no persistence)
+    operationId: calculateAmortization
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - amount
+              - termMonths
+              - interestRate
+            properties:
+              amount:
+                type: number
+              termMonths:
+                type: integer
+              interestRate:
+                type: number
+    responses:
+      '200':
+        description: Amortization schedule
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        monthlyPayment:
+                          type: number
+                        totalInterest:
+                          type: number
+                        schedule:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              month:
+                                type: integer
+                              payment:
+                                type: number
+                              principal:
+                                type: number
+                              interest:
+                                type: number
+                              balance:
+                                type: number

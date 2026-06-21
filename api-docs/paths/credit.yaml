@@ -1,0 +1,58 @@
+score:
+  get:
+    tags:
+      - Credit
+    summary: Get user's credit score
+    operationId: getCreditScore
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: Credit score
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        score:
+                          type: number
+                          minimum: 0
+                          maximum: 999
+                        grade:
+                          type: string
+                          enum: [A+, A, B, C, D, E]
+
+report:
+  get:
+    tags:
+      - Credit
+    summary: Get full credit report (admin only)
+    operationId: getCreditReport
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: userId
+        in: query
+        schema:
+          type: string
+        description: User ID to fetch report for (admin only)
+    responses:
+      '200':
+        description: Credit report
+
+grade:
+  get:
+    tags:
+      - Credit
+    summary: Get credit grade based on debt-to-income ratio
+    operationId: getCreditGrade
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: Credit grade
