@@ -60,6 +60,7 @@
     "migrate-mongo": "^14.0.7",
     "mongodb-memory-server": "^11.2.0",
     "supertest": "^7.2.2",
-    "ts-jest": "^29.4.11"
+    "ts-jest": "^29.4.11",
+    "typescript-eslint": "^8.61.1"
   }
 }

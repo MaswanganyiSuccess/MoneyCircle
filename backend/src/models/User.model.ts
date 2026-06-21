@@ -52,7 +52,7 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
 
-  // ---------- EXTRACTED FROM SA ID ----------
+  // ---------- EXTRACTED FROM SA ID (required) ----------
   dateOfBirth: Date;
   gender: 'Male' | 'Female';
   age: number; // convenience – can be computed on the fly
@@ -167,10 +167,10 @@ const UserSchema = new Schema<IUser>(
     // ---------- SOFT DELETE ----------
     deletedAt: { type: Date },
 
-    // ---------- NEW: EXTRACTED FROM SA ID ----------
+    // ---------- EXTRACTED FROM SA ID (required) ----------
     dateOfBirth: {
       type: Date,
-      required: true, // auto‑populated
+      required: true, // auto‑populated before validation
     },
     gender: {
       type: String,
@@ -179,16 +179,16 @@ const UserSchema = new Schema<IUser>(
     },
     age: {
       type: Number,
-      // optional – will be set by pre‑save hook
+      // optional – will be set by pre‑validate hook
     },
 
-    // ---------- NEW: REFERENCE TO DETAILED PROFILE ----------
+    // ---------- LINK TO BORROWER PROFILE ----------
     borrowerProfile: {
       type: Schema.Types.ObjectId,
       ref: 'BorrowerProfile',
     },
 
-    // ---------- NEW: LOAN AGGREGATES ----------
+    // ---------- LOAN AGGREGATES ----------
     totalBorrowed: {
       type: Number,
       default: 0,
@@ -230,8 +230,11 @@ UserSchema.pre('countDocuments', function () {
   this.where({ deletedAt: null });
 });
 
-// ---------- ID VALIDATION & AUTO‑POPULATE HOOK ----------
-UserSchema.pre('save', function (next) {
+// ---------- ID VALIDATION & AUTO‑POPULATE (BEFORE VALIDATION) ----------
+// This hook runs before Mongoose validates the document,
+// so we can populate `dateOfBirth` and `gender` from the ID
+// before the `required: true` validation kicks in.
+UserSchema.pre('validate', function (next) {
   if (this.isModified('idNumber')) {
     const result = validateSAID(this.idNumber);
 

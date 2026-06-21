@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import { config } from './config/env';
 import { logger } from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -11,20 +12,17 @@ import routes from './routes';
 
 const app = express();
 
-app.set('trust proxy', true);
+const isTest = process.env.NODE_ENV === 'test';
+
+// Trust proxy – only in production/development (avoids rate‑limit warnings in test)
+if (!isTest) {
+  app.set('trust proxy', true);
+}
 
 // ============================================================
-// ✅ HEALTH CHECKS – MUST BE FIRST!
-// These routes are placed before any middleware to guarantee
-// they are never blocked by CORS, authentication, or other
-// middleware that might interfere.
+// HEALTH CHECKS – MUST BE FIRST!
 // ============================================================
 
-/**
- * GET /api/health
- * Basic health check – returns service status.
- * Used by Render's health checks and GitHub Actions.
- */
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -33,10 +31,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-/**
- * GET /health
- * Alias for /api/health – also works at root level.
- */
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -49,39 +43,40 @@ app.get('/health', (req, res) => {
 // MIDDLEWARE
 // ============================================================
 
-// Security headers
 app.use(helmet());
-
-// CORS – allow only configured origin
 app.use(cors({ origin: config.corsOrigin }));
-
-// Compress responses
 app.use(compression());
-
-// JSON and URL-encoded body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// HTTP request logging (skip in test environment)
-if (config.nodeEnv !== 'test') {
+if (!isTest) {
   app.use(morgan('combined'));
+}
+
+// ============================================================
+// RATE LIMITING – COMPLETELY DISABLED IN TEST
+// ============================================================
+if (!isTest) {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(limiter);
 }
 
 // ============================================================
 // API ROUTES
 // ============================================================
 
-// Mount all API routes under /api
 app.use('/api', routes);
 
 // ============================================================
 // ERROR HANDLING
 // ============================================================
 
-// 404 handler for unmatched routes
 app.use(notFoundHandler);
-
-// Global error handler (must be last)
 app.use(errorHandler);
 
 // ============================================================
