@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import { logger } from '../config/logger';
 import { sendError } from '../utils/helpers';
 
@@ -29,6 +30,20 @@ export const errorHandler = (
 
   if (err instanceof AppError) {
     sendError(res, err.message, err.statusCode, err.errors);
+    return;
+  }
+
+  const isZodError =
+    err instanceof ZodError ||
+    (err && typeof err === 'object' && Array.isArray((err as any).errors));
+
+  if (isZodError) {
+    const zodError = err as ZodError;
+    const errorMessages = (zodError.errors || []).map((e: any) => ({
+      path: Array.isArray(e.path) ? e.path.join('.') : String(e.path),
+      message: e.message,
+    }));
+    sendError(res, 'Validation error', 400, errorMessages);
     return;
   }
 
