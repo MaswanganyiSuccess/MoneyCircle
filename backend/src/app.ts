@@ -4,25 +4,63 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
-import { config } from './config/env';
+import swaggerUi from 'swagger-ui-express';
+import path from 'path';
+import fs from 'fs';
+import yaml from 'yaml';
+import SwaggerParser from '@apidevtools/swagger-parser';
+import config, { isTest } from './config/env';
 import { logger } from './config/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import connectDB from './config/database';
 import routes from './routes';
+import { swaggerOptions } from './config/swagger';
 
 const app = express();
 
-const isTest = process.env.NODE_ENV === 'test';
-
-// Trust proxy – only in production/development (avoids rate‑limit warnings in test)
-if (!isTest) {
+// ───────────────────────────────────────
+// Trust proxy (only when configured)
+// ───────────────────────────────────────
+if (config.trustProxy) {
   app.set('trust proxy', true);
+  logger.info('🔒 Trust proxy enabled');
 }
 
-// ============================================================
-// HEALTH CHECKS – MUST BE FIRST!
-// ============================================================
+// ───────────────────────────────────────
+// CORS – MUST COME EARLY
+// ───────────────────────────────────────
+const corsOptions = {
+  origin: config.corsOrigin,          // '*' or array of origins
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
 
+// Enable CORS for all routes
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
+// ───────────────────────────────────────
+// Security headers (with relaxed cross-origin)
+// ───────────────────────────────────────
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'unsafe-none' },
+  })
+);
+
+// ───────────────────────────────────────
+// Static files (logos)
+// ───────────────────────────────────────
+const publicPath = path.join(__dirname, '../../public');
+app.use('/static', express.static(publicPath));
+logger.info(`📁 Serving static files from ${publicPath}`);
+
+// ───────────────────────────────────────
+// Health checks (MUST BE FIRST)
+// ───────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -39,50 +77,78 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ============================================================
-// MIDDLEWARE
-// ============================================================
-
-app.use(helmet());
-app.use(cors({ origin: config.corsOrigin }));
+// ───────────────────────────────────────
+// Other middleware
+// ───────────────────────────────────────
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 if (!isTest) {
   app.use(morgan('combined'));
 }
 
-// ============================================================
-// RATE LIMITING – COMPLETELY DISABLED IN TEST
-// ============================================================
+// ───────────────────────────────────────
+// Rate limiting (disabled in test)
+// ───────────────────────────────────────
 if (!isTest) {
   const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+    windowMs: config.rateLimitWindowMs,
+    max: config.rateLimitMax,
     standardHeaders: true,
     legacyHeaders: false,
   });
   app.use(limiter);
 }
 
-// ============================================================
-// API ROUTES
-// ============================================================
+// ───────────────────────────────────────
+// Swagger UI
+// ───────────────────────────────────────
+let swaggerDocument: any = null;
 
+app.get('/api/docs/spec.json', async (req, res) => {
+  try {
+    const openApiFile = path.join(__dirname, '../../api-docs/openapi.yaml');
+    const fileContent = fs.readFileSync(openApiFile, 'utf8');
+    const parsed = yaml.parse(fileContent);
+    res.json(parsed);
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to load spec' });
+  }
+});
+
+if (config.enableSwagger) {
+  app.use(config.swaggerPath, swaggerUi.serve);
+
+  app.get(config.swaggerPath, async (req, res, next) => {
+    if (!swaggerDocument) {
+      try {
+        const openApiFile = path.join(__dirname, '../../api-docs/openapi.yaml');
+        swaggerDocument = await SwaggerParser.bundle(openApiFile);
+        logger.info(`📚 Swagger spec bundled successfully at ${config.swaggerPath}`);
+      } catch (error) {
+        logger.error('Failed to bundle Swagger spec: ' + (error as Error).message);
+        return res.status(500).json({ error: 'Swagger spec could not be loaded' });
+      }
+    }
+    return swaggerUi.setup(swaggerDocument, swaggerOptions)(req, res, next);
+  });
+}
+
+// ───────────────────────────────────────
+// API routes
+// ───────────────────────────────────────
 app.use('/api', routes);
 
-// ============================================================
-// ERROR HANDLING
-// ============================================================
-
+// ───────────────────────────────────────
+// Error handling
+// ───────────────────────────────────────
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// ============================================================
-// DATABASE CONNECTION
-// ============================================================
-
+// ───────────────────────────────────────
+// Database connection
+// ───────────────────────────────────────
 connectDB();
 
 export default app;
