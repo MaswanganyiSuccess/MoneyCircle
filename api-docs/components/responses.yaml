@@ -1,0 +1,55 @@
+Success:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+    data:
+      type: object
+
+Error:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: string
+
+BadRequest:
+  description: Bad request (validation error)
+  content:
+    application/json:
+      schema:
+        $ref: '#/Error'
+
+Unauthorized:
+  description: Unauthorized (invalid or missing token)
+  content:
+    application/json:
+      schema:
+        $ref: '#/Error'
+
+NotFound:
+  description: Resource not found
+  content:
+    application/json:
+      schema:
+        $ref: '#/Error'
+
+HealthOK:
+  description: Service is healthy
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          status:
+            type: string
+          environment:
+            type: string
+          timestamp:
+            type: string
+            format: date-time

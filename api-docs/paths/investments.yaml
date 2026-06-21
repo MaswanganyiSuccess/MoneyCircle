@@ -1,0 +1,111 @@
+list:
+  get:
+    tags:
+      - Investments
+    summary: List user investments
+    operationId: listInvestments
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: List of investments
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../components/schemas.yaml#/Investment'
+
+invest:
+  post:
+    tags:
+      - Investments
+    summary: Invest in a loan
+    operationId: invest
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - loanId
+              - amount
+            properties:
+              loanId:
+                type: string
+              amount:
+                type: number
+                minimum: 1
+    responses:
+      '201':
+        description: Investment created
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/Investment'
+
+get:
+  get:
+    tags:
+      - Investments
+    summary: Get investment details
+    operationId: getInvestment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+    responses:
+      '200':
+        description: Investment details
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/Investment'
+
+withdraw:
+  post:
+    tags:
+      - Investments
+    summary: Withdraw matured investment
+    operationId: withdrawInvestment
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+    responses:
+      '200':
+        description: Withdrawal processed
+
+returns:
+  get:
+    tags:
+      - Investments
+    summary: Get investment returns summary
+    operationId: investmentReturns
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: Returns summary

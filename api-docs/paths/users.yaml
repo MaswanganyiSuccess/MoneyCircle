@@ -1,0 +1,137 @@
+getMe:
+  get:
+    tags:
+      - Users
+    summary: Get current user profile
+    operationId: getMe
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: User profile returned
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/User'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+
+updateProfile:
+  put:
+    tags:
+      - Users
+    summary: Update user profile (basic info)
+    operationId: updateProfile
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              firstName:
+                type: string
+              lastName:
+                type: string
+              phoneNumber:
+                type: string
+              address:
+                $ref: '../components/schemas.yaml#/Address'
+    responses:
+      '200':
+        description: Profile updated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/User'
+
+borrowerProfile:
+  post:
+    tags:
+      - Users
+    summary: Create or update detailed borrower KYC profile
+    description: Full KYC profile including employment, banking, and documents.
+    operationId: upsertBorrowerProfile
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas.yaml#/BorrowerProfileInput'
+    responses:
+      '200':
+        description: Profile saved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../components/schemas.yaml#/BorrowerProfile'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+
+uploadDocuments:
+  post:
+    tags:
+      - Users
+    summary: Upload KYC documents (ID copy, bank statements, proof of address)
+    operationId: uploadDocuments
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              idCopy:
+                type: string
+                format: binary
+              proofOfAddress:
+                type: string
+                format: binary
+              bankStatements:
+                type: array
+                items:
+                  type: string
+                  format: binary
+    responses:
+      '200':
+        description: Files uploaded, URLs returned
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../components/responses.yaml#/Success'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        idCopy:
+                          type: string
+                          example: https://...
+                        proofOfAddress:
+                          type: string
+                        bankStatements:
+                          type: array
+                          items:
+                            type: string
