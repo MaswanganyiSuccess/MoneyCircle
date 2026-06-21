@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Sun, Moon, Laptop } from 'lucide-react';
 import authService from "@/api";
-//import authService from '/src/api/index.ts'
+import { useNavigate } from 'react-router-dom';
 export default function LandingPage() {
     const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
         const stored = localStorage.getItem('theme');
@@ -25,7 +25,7 @@ export default function LandingPage() {
         setTheme(newTheme);
     };
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-
+    const navigate = useNavigate();
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErrorMessage('');
@@ -40,6 +40,7 @@ export default function LandingPage() {
 
                 // Redirect or update local application layout state here
                 console.log('Logged-in user context:', response.data.user);
+                navigate('/dashboard');
             } else {
                 // Placeholder placeholder until signup variables are dropped in
                 alert('Signup integration is up next!');
