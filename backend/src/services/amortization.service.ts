@@ -33,7 +33,13 @@ export class AmortizationService {
     const { amount, interestRate, termMonths, firstRepaymentDate } = loan;
     const monthlyRate = interestRate / 100 / 12;
     const monthlyPayment = this.calculateMonthlyPayment(amount, interestRate, termMonths);
-    const schedule = [];
+    const schedule: Array<{
+  dueDate: Date;
+  dueAmount: number;
+  interestPortion: number;
+  principalPortion: number;
+  remainingBalance: number;
+}> = [];
     let balance = amount;
     const startDate = firstRepaymentDate || new Date();
 

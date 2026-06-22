@@ -37,7 +37,13 @@ export class LoanService {
   }> {
     const monthlyRate = annualRate / 100 / 12;
     const monthlyPayment = this.calculateMonthlyPayment(principal, annualRate, termMonths);
-    const schedule = [];
+    const schedule: Array<{
+  dueDate: Date;
+  dueAmount: number;
+  interestPortion: number;
+  principalPortion: number;
+  remainingBalance: number;
+}> = [];
     let balance = principal;
 
     for (let i = 1; i <= termMonths; i++) {

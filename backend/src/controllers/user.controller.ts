@@ -18,7 +18,22 @@ export class UserController {
   static async updateProfile(req: AuthenticatedRequest, res: Response) {
     try {
       const data = updateProfileSchema.parse(req.body);
-      const user = await UserService.updateProfile(req.user!.id, data);
+      // ✅ Build update object with proper address handling
+      const updateData: any = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        phoneNumber: data.phoneNumber,
+      };
+      if (data.address) {
+        updateData.address = {
+          street: data.address.street || '',
+          city: data.address.city || '',
+          province: data.address.province || '',
+          postalCode: data.address.postalCode || '',
+          country: data.address.country || 'South Africa',
+        };
+      }
+      const user = await UserService.updateProfile(req.user!.id, updateData);
       await UserService.logAction(req.user!.id, 'UPDATE_PROFILE', data, req.ip, req.headers['user-agent']);
       sendSuccess(res, user, 'Profile updated successfully');
     } catch (error) {

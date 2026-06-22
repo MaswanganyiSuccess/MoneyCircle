@@ -40,9 +40,6 @@ paths:
   # Health
   /health:
     $ref: './paths/health.yaml#/health'
-  /api/health:
-    $ref: './paths/health.yaml#/apiHealth'
-
   # Auth
   /auth/register:
     $ref: './paths/auth.yaml#/register'

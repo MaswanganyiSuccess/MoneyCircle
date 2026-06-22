@@ -1,4 +1,3 @@
-
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import { authService } from '../services/auth.service';
@@ -17,7 +16,16 @@ export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const validatedData = registerSchema.parse(req.body);
-      const user = await authService.register(validatedData);
+      // ✅ Explicitly pass required fields – Zod ensures they exist, so `!` is safe.
+      const user = await authService.register({
+        email: validatedData.email!,
+        password: validatedData.password!,
+        firstName: validatedData.firstName!,
+        lastName: validatedData.lastName!,
+        phoneNumber: validatedData.phoneNumber!,
+        idNumber: validatedData.idNumber!,
+        role: validatedData.role!,
+      });
       sendSuccess(res, user, 'User registered successfully', 201);
     } catch (error) {
       // Handle duplicate key error (MongoDB code 11000)

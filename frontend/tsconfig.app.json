@@ -6,11 +6,13 @@
     "module": "esnext",
     "types": ["vite/client", "node"],
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
 
     /* Path Mapping for Shadcn UI */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/hooks/*": ["./src/components/hooks/*"]
     },
 
     /* Bundler mode */
