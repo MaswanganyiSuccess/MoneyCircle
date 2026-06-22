@@ -1,0 +1,14 @@
+{
+  "experimental": {
+    "contextProviders": {
+      "codebase": {
+        "enabled": true,
+        "maxFiles": 50
+      }
+    }
+  },
+  "tabAutocompleteOptions": {
+    "maxPromptTokens": 2048,
+    "prefixPercentage": 0.5
+  }
+}

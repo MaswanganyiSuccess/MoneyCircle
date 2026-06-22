@@ -1,5 +1,28 @@
+# ============================================================
+# MONEYCIRCLE – DATA SCHEMAS
+# All response fields are marked as required
+# ============================================================
+
 User:
   type: object
+  required:
+    - id
+    - email
+    - firstName
+    - lastName
+    - phoneNumber
+    - idNumber
+    - role
+    - dateOfBirth
+    - gender
+    - age
+    - status
+    - kycStatus
+    - totalBorrowed
+    - totalRepaid
+    - totalOutstanding
+    - createdAt
+    - updatedAt
   properties:
     id:
       type: string
@@ -12,6 +35,8 @@ User:
     lastName:
       type: string
     phoneNumber:
+      type: string
+    idNumber:
       type: string
     role:
       type: string
@@ -38,16 +63,27 @@ User:
       type: number
     creditGrade:
       type: string
+      example: A
     creditScore:
       type: integer
+      example: 750
     address:
       $ref: '#/Address'
     createdAt:
       type: string
       format: date-time
+    updatedAt:
+      type: string
+      format: date-time
 
 Address:
   type: object
+  required:
+    - street
+    - city
+    - province
+    - postalCode
+    - country
   properties:
     street:
       type: string
@@ -59,9 +95,22 @@ Address:
       type: string
     country:
       type: string
+      default: South Africa
 
 Loan:
   type: object
+  required:
+    - id
+    - borrowerId
+    - amount
+    - interestRate
+    - termMonths
+    - purpose
+    - status
+    - outstandingBalance
+    - fundedAmount
+    - createdAt
+    - updatedAt
   properties:
     id:
       type: string
@@ -91,6 +140,14 @@ Loan:
 
 Investment:
   type: object
+  required:
+    - id
+    - lenderId
+    - loanId
+    - amount
+    - expectedReturn
+    - status
+    - createdAt
   properties:
     id:
       type: string
@@ -111,11 +168,29 @@ Investment:
 
 BorrowerProfile:
   type: object
+  required:
+    - userId
+    - employment
+    - monthlyIncome
+    - deductions
+    - netIncome
+    - dependents
+    - monthlyExpenses
+    - address
+    - banking
+    - emergencyContact
+    - documents
+    - verificationStatus
   properties:
     userId:
       type: string
     employment:
       type: object
+      required:
+        - employerName
+        - employerAddress
+        - employerContact
+        - employmentStatus
       properties:
         employerName:
           type: string
@@ -140,6 +215,11 @@ BorrowerProfile:
       $ref: '#/Address'
     banking:
       type: object
+      required:
+        - bankName
+        - accountNumber
+        - branchCode
+        - accountType
       properties:
         bankName:
           type: string
@@ -152,6 +232,10 @@ BorrowerProfile:
           enum: [current, savings, cheque, investment]
     emergencyContact:
       type: object
+      required:
+        - name
+        - relationship
+        - phone
       properties:
         name:
           type: string
@@ -161,6 +245,10 @@ BorrowerProfile:
           type: string
     documents:
       type: object
+      required:
+        - idCopy
+        - bankStatements
+        - proofOfAddress
       properties:
         idCopy:
           type: string
@@ -176,10 +264,24 @@ BorrowerProfile:
 
 BorrowerProfileInput:
   type: object
+  required:
+    - employment
+    - monthlyIncome
+    - deductions
+    - dependents
+    - monthlyExpenses
+    - address
+    - banking
+    - emergencyContact
+    - documents
   properties:
     employment:
       type: object
-      required: [employerName, employerAddress, employerContact, employmentStatus]
+      required:
+        - employerName
+        - employerAddress
+        - employerContact
+        - employmentStatus
       properties:
         employerName:
           type: string
@@ -189,6 +291,7 @@ BorrowerProfileInput:
           type: string
         employmentStatus:
           type: string
+          enum: [employed, self-employed, unemployed, student, retired]
     monthlyIncome:
       type: number
     deductions:
@@ -201,7 +304,11 @@ BorrowerProfileInput:
       $ref: '#/Address'
     banking:
       type: object
-      required: [bankName, accountNumber, branchCode, accountType]
+      required:
+        - bankName
+        - accountNumber
+        - branchCode
+        - accountType
       properties:
         bankName:
           type: string
@@ -211,9 +318,13 @@ BorrowerProfileInput:
           type: string
         accountType:
           type: string
+          enum: [current, savings, cheque, investment]
     emergencyContact:
       type: object
-      required: [name, relationship, phone]
+      required:
+        - name
+        - relationship
+        - phone
       properties:
         name:
           type: string
@@ -223,6 +334,10 @@ BorrowerProfileInput:
           type: string
     documents:
       type: object
+      required:
+        - idCopy
+        - bankStatements
+        - proofOfAddress
       properties:
         idCopy:
           type: string

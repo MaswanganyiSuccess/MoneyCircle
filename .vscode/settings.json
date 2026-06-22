@@ -1,0 +1,6 @@
+{
+  "continue.enableTabAutocomplete": true,
+  "continue.enableInlineCompletion": true,
+  "continue.allowAnonymousTelemetry": false,
+  "editor.inlineSuggest.enabled": true
+}

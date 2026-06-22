@@ -5,6 +5,7 @@ import userRoutes from './user.routes';
 import creditRoutes from './credit.routes';
 import loanRoutes from './loan.routes';
 import investmentRoutes from './investment.routes';
+import onboardingRoutes from './onboarding.routes';
 import { authenticateJWT, requireLender } from '../middleware/auth';
 import { BalanceService } from '../services/balance.service';
 import { sendSuccess, sendError } from '../utils/helpers';
@@ -54,6 +55,7 @@ router.get('/lender/dashboard', authenticateJWT, requireLender, InvestmentContro
 // ==============================
 router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
+router.use('/onboarding', onboardingRoutes);
 router.use('/users', userRoutes);
 router.use('/credit', creditRoutes);
 router.use('/loans', loanRoutes);

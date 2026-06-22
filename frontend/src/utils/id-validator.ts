@@ -1,12 +1,10 @@
 /**
  * South African ID Number Validator
- *
  * Format: YYMMDD SSSS C AZ
  * - YYMMDD: Date of birth (6 digits)
  * - SSSS: Gender (0000-4999 = Female, 5000-9999 = Male)
  * - C: Citizenship (0 = SA Citizen, 1 = Permanent Resident)
  * - AZ: Check digits (Luhn algorithm)
- *
  * Total: 13 digits
  */
 
@@ -32,6 +30,34 @@ function calculateAge(dateOfBirth: Date): number {
 }
 
 /**
+ * Validate Luhn check digits
+ */
+function validateLuhn(idNumber: string): boolean {
+  const digits = idNumber.split('').map((d) => Number(d));
+  if (digits.length !== 13 || digits.some((d) => Number.isNaN(d))) return false;
+
+  // sum of digits in positions 0,2,4,6,8,10 (leftmost index 0)
+  let sumOdd = 0;
+  for (let i = 0; i <= 10; i += 2) {
+    sumOdd += digits[i];
+  }
+
+  // concatenate even position digits 1,3,5,7,9,11
+  let evenConcat = '';
+  for (let i = 1; i <= 11; i += 2) {
+    evenConcat += String(digits[i]);
+  }
+
+  const doubled = String(Number(evenConcat) * 2);
+  let sumDoubledDigits = 0;
+  for (const ch of doubled) sumDoubledDigits += Number(ch);
+
+  const total = sumOdd + sumDoubledDigits;
+  const checkDigit = (10 - (total % 10)) % 10;
+  return checkDigit === digits[12];
+}
+
+/**
  * Validate a South African ID number
  */
 export function validateSAID(idNumber: string): IDValidationResult {
@@ -52,9 +78,9 @@ export function validateSAID(idNumber: string): IDValidationResult {
   const genderCode = digits[6] * 1000 + digits[7] * 100 + digits[8] * 10 + digits[9];
   const citizenship = digits[10];
 
-  // 3. Validate date of birth (future‑proof century)
+  // 3. Validate date of birth (future-proof century)
   const currentYear = new Date().getFullYear();
-  const century = (yy <= currentYear % 100) ? 2000 : 1900;
+  const century = yy <= currentYear % 100 ? 2000 : 1900;
   const year = century + yy;
   const dateOfBirth = new Date(year, mm - 1, dd);
 
@@ -82,9 +108,9 @@ export function validateSAID(idNumber: string): IDValidationResult {
     errors.push('Citizenship must be 0 (SA Citizen) or 1 (Permanent Resident)');
   }
 
-  // 7. Validate check digits (corrected Luhn algorithm)
+  // 7. Validate check digits
   if (!validateLuhn(idNumber)) {
-    errors.push('Invalid check digits (Luhn validation failed)');
+    errors.push('Invalid check digits');
   }
 
   // Return result
@@ -108,34 +134,8 @@ export function validateSAID(idNumber: string): IDValidationResult {
 }
 
 /**
- * Standard Luhn algorithm – used for SA ID check digits
+ * Format ID number as user types (add spaces for readability)
  */
-function validateLuhn(idNumber: string): boolean {
-  // South African ID Luhn check (canonical):
-  // - Sum digits in odd positions (1st,3rd,...,11th from left)
-  // - Concatenate digits in even positions (2nd,4th,...,12th), multiply by 2, sum all its digits
-  // - Total = sumOdd + sumDigits(doubleEven)
-  // - Check digit = (10 - (total % 10)) % 10 must equal the 13th digit
-  const digits = idNumber.split('').map((d) => Number(d));
-  if (digits.length !== 13 || digits.some((d) => Number.isNaN(d))) return false;
-
-  // sum of digits in positions 0,2,4,6,8,10 (leftmost index 0)
-  let sumOdd = 0;
-  for (let i = 0; i <= 10; i += 2) {
-    sumOdd += digits[i];
-  }
-
-  // concatenate even position digits 1,3,5,7,9,11
-  let evenConcat = '';
-  for (let i = 1; i <= 11; i += 2) {
-    evenConcat += String(digits[i]);
-  }
-
-  const doubled = String(Number(evenConcat) * 2);
-  let sumDoubledDigits = 0;
-  for (const ch of doubled) sumDoubledDigits += Number(ch);
-
-  const total = sumOdd + sumDoubledDigits;
-  const checkDigit = (10 - (total % 10)) % 10;
-  return checkDigit === digits[12];
+export function formatIDNumber(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 13);
 }

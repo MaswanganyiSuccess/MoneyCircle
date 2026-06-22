@@ -22,13 +22,3 @@ health:
                 timestamp:
                   type: string
                   format: date-time
-
-apiHealth:
-  get:
-    tags:
-      - Health
-    summary: Alias for /health
-    operationId: apiHealthCheck
-    responses:
-      '200':
-        $ref: '../components/responses.yaml#/HealthOK'

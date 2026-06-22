@@ -6,6 +6,11 @@ import { User, IUser } from '../models/User.model';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../config/logger';
 
+export const hashPassword = async (plainPassword: string): Promise<string> => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(plainPassword, salt);
+};
+
 export interface TokenPayload {
   id: string;
   email: string;
@@ -91,14 +96,6 @@ export class AuthService {
   async login(email: string, password: string): Promise<{ user: Partial<IUser>; tokens: AuthTokens }> {
     // ✅ CRITICAL: select +passwordHash (it's hidden by default)
     const user = await User.findOne({ email }).select('+passwordHash');
-
-    // Debug logs – remove in production
-    console.log('🔍 User found:', user ? 'YES' : 'NO');
-    if (user) {
-      console.log('📝 Stored hash:', user.passwordHash);
-      console.log('🔑 Plain password:', password);
-    }
-
     if (!user) {
       throw new AppError('Invalid credentials', 401);
     }
@@ -108,7 +105,6 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-    console.log('✅ Password match:', isPasswordValid);
 
     if (!isPasswordValid) {
       await user.incrementFailedAttempts();
