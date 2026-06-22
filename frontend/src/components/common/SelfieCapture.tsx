@@ -1,4 +1,3 @@
-// frontend/src/components/views/Landing/SelfieCapture.tsx
 import { useState, useRef, useEffect } from 'react';
 import { Camera, RefreshCw, Check, AlertCircle } from 'lucide-react';
 
@@ -17,7 +16,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Start camera
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -37,7 +35,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     }
   };
 
-  // Stop camera
   const stopCamera = () => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
@@ -48,7 +45,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     }
   };
 
-  // Capture image from video
   const capture = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
@@ -63,14 +59,11 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     detectFace(imageData);
   };
 
-  // Face detection using native FaceDetector API
   const detectFace = async (imageData: string) => {
     setIsDetecting(true);
     setFaceDetected(null);
     try {
-      // Check if FaceDetector is supported
       if (!('FaceDetector' in window)) {
-        // Fallback: assume face detected (skip detection)
         setFaceDetected(true);
         const file = dataURLtoFile(imageData, 'selfie.jpg');
         onCapture(file);
@@ -78,13 +71,12 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
         return;
       }
 
-      // Create a temporary image to detect face
       const img = new Image();
       img.src = imageData;
       await new Promise((resolve) => (img.onload = resolve));
 
-      const faceDetectorConstructor = (window as any).FaceDetector;
-      const detector = new faceDetectorConstructor({
+      // @ts-ignore – FaceDetector is not in TypeScript's DOM types
+      const detector = new window.FaceDetector({
         maxDetectedFaces: 1,
         fastMode: true,
       });
@@ -99,11 +91,9 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
       } else {
         setError('No face detected. Please position your face clearly and try again.');
         if (onError) onError('No face detected.');
-        // Keep camera open to retry
       }
     } catch (err) {
       console.error('Face detection error:', err);
-      // Fallback: accept the image anyway (but we could also retry)
       setFaceDetected(true);
       const file = dataURLtoFile(imageData, 'selfie.jpg');
       onCapture(file);
@@ -113,7 +103,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     }
   };
 
-  // Helper: convert dataURL to File
   const dataURLtoFile = (dataURL: string, filename: string): File => {
     const arr = dataURL.split(',');
     const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
@@ -126,7 +115,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     return new File([u8arr], filename, { type: mime });
   };
 
-  // Retake: clear captured image and restart camera
   const retake = () => {
     setCapturedImage(null);
     setFaceDetected(null);
@@ -134,14 +122,12 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     startCamera();
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, []);
 
-  // If no camera yet, show start button
   if (!stream && !capturedImage) {
     return (
       <div className={`flex flex-col items-center gap-3 p-4 border-2 border-dashed rounded-xl ${className}`}>
@@ -158,7 +144,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     );
   }
 
-  // Camera active – show video and capture controls
   if (stream && !capturedImage) {
     return (
       <div className={`space-y-3 ${className}`}>
@@ -200,7 +185,6 @@ export default function SelfieCapture({ onCapture, onError, className = '' }: Se
     );
   }
 
-  // Captured image – show preview and retry
   if (capturedImage) {
     return (
       <div className={`space-y-3 ${className}`}>

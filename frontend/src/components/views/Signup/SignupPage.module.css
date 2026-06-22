@@ -18,7 +18,7 @@
 /* ─── Card ─── */
 .card {
   width: 100%;
-  max-width: 42rem;
+  max-width: 48rem;
   position: relative;
   border-radius: 1.25rem;
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -27,7 +27,7 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   padding: 2rem 2.25rem;
   transition: background 0.3s, border-color 0.3s;
-  text-align: left;  /* ← critical: left-align everything inside */
+  text-align: left;
 }
 
 :global(.dark) .card {
@@ -120,7 +120,14 @@
 
 /* ─── Step Content ─── */
 .stepContent {
-  text-align: left;  /* ensure all step content is left-aligned */
+  text-align: left;
+}
+
+/* ─── Name Row ─── */
+.nameRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 /* ─── Form Elements ─── */
@@ -137,7 +144,7 @@
   letter-spacing: 0.025em;
   color: #1a1a1a;
   margin-bottom: 0.3rem;
-  text-align: left;  /* ensure labels are left-aligned */
+  text-align: left;
 }
 
 :global(.dark) .label {
@@ -156,6 +163,7 @@
   outline: none;
   color: #1a1a1a;
   text-align: left;
+  appearance: auto;
 }
 
 :global(.dark) .input {
@@ -172,6 +180,10 @@
 .input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.input select {
+  appearance: auto;
 }
 
 /* ─── Helper Text ─── */
@@ -242,6 +254,52 @@
   background: rgba(99, 102, 241, 0.2);
 }
 
+/* ─── Secondary Button ─── */
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #6366f1;
+  background: transparent;
+  color: #6366f1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.1s;
+  margin-top: 0.5rem;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Status Row ─── */
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.statusSuccess {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.statusPending {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
 /* ─── Buttons ─── */
 .buttonRow {
   display: flex;
@@ -286,44 +344,6 @@
 .btnBack:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.btnSecondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.1rem;
-  border-radius: 0.75rem;
-  border: 1px solid #6366f1;
-  background: transparent;
-  color: #6366f1;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, transform 0.1s;
-}
-
-.btnSecondary:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.1);
-}
-
-.btnSecondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.statusRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.statusSuccess {
-  color: #16a34a;
-  font-weight: 700;
 }
 
 .btnNext {
@@ -404,11 +424,6 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-.statusPending {
-  color: #f59e0b;
-  font-weight: 600;
-}
-
 /* ─── Error ─── */
 .error {
   margin-top: 1rem;
@@ -424,10 +439,3 @@
 :global(.dark) .error {
   background: rgba(239, 68, 68, 0.15);
 }
-
-/* ─── Name Row ─── */
-.nameRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-} 
