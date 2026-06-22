@@ -56,6 +56,7 @@ const bankBranchCodeMap = {
   },
 } as const;
 
+// ---------- Helpers ----------
 const normalizeName = (value: string): string =>
   value.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -71,12 +72,14 @@ const findSupportedBank = (value: string) => {
   });
 };
 
+// ---------- Patterns ----------
 const phonePattern = /^\+27\d{9}$/;
 const emailPattern = /^\S+@\S+\.\S+$/;
 const namePattern = /^[A-Za-z\s'’\-]+$/;
 const accountNumberPattern = /^\d{8,10}$/;
 const branchCodePattern = /^\d{6}$/;
 
+// ---------- Types ----------
 export type OnboardingFieldName =
   | 'firstName'
   | 'lastName'
@@ -90,6 +93,7 @@ export type OnboardingFieldName =
   | 'monthlyIncome'
   | 'deductions';
 
+// ---------- Field Validators ----------
 const fieldValidators: Record<OnboardingFieldName, (value: any, context?: { bankName?: string }) => { isValid: boolean; error?: string }> = {
   firstName: (value) => {
     if (typeof value !== 'string' || !value.trim()) return { isValid: false, error: 'First name is required' };
@@ -142,7 +146,11 @@ const fieldValidators: Record<OnboardingFieldName, (value: any, context?: { bank
     if (context?.bankName) {
       const bank = findSupportedBank(context.bankName);
       if (!bank) return { isValid: false, error: 'Bank name must be selected before validating branch code' };
-      if (!bank.codes.includes(value)) return { isValid: false, error: 'Branch code does not match selected bank' };
+      // ✅ Fix: use `some` with explicit casting to avoid 'never' type error
+      const codes = bank.codes as readonly string[];
+      if (!codes.some((code) => code === value)) {
+        return { isValid: false, error: 'Branch code does not match selected bank' };
+      }
     }
     return { isValid: true };
   },
@@ -160,16 +168,15 @@ const fieldValidators: Record<OnboardingFieldName, (value: any, context?: { bank
   },
 };
 
+// ---------- Public Validation Helper ----------
 export function validateOnboardingField(field: string, value: any, bankName?: string) {
   if (!fieldValidators[field as OnboardingFieldName]) {
     return { isValid: false, error: 'Unsupported validation field' };
   }
-
   return fieldValidators[field as OnboardingFieldName](value, { bankName });
 }
 
-export const supportedBankNames = Object.values(bankBranchCodeMap).map((bank) => bank.displayName);
-
+// ---------- Zod Schema ----------
 export const borrowerOnboardingSchema = z
   .object({
     firstName: z
@@ -218,10 +225,13 @@ export const borrowerOnboardingSchema = z
   })
   .refine((data) => {
     const bank = findSupportedBank(data.bankName);
-    return bank ? bank.codes.some((code) => code === data.branchCode) : false;
+    if (!bank) return false;
+    const codes = bank.codes as readonly string[];
+    return codes.some((code) => code === data.branchCode);
   }, {
     message: 'Branch code does not match selected bank',
     path: ['branchCode'],
   });
 
+// ---------- Exported List of Supported Banks (ONLY ONCE) ----------
 export const supportedBankNames = Object.values(bankBranchCodeMap).map((bank) => bank.displayName);

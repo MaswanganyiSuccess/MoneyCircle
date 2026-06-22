@@ -1,9 +1,9 @@
 {
   "models": [
     {
-      "title": "Qwen2.5-Coder 1.5B",
+      "title": "Qwen2.5-Coder 3B",
       "provider": "ollama",
-      "model": "qwen2.5-coder:1.5b"
+      "model": "qwen2.5-coder:3b"
     }
   ],
   "tabAutocompleteModel": {
@@ -11,7 +11,11 @@
     "provider": "ollama",
     "model": "qwen2.5-coder:1.5b"
   },
-  "systemMessage": "You are an expert full-stack TypeScript developer working on MoneyCircle...",
+  "embeddingsProvider": {
+    "provider": "ollama",
+    "model": "nomic-embed-text:latest"
+  },
+  "systemMessage": "You are an expert full-stack TypeScript developer working on MoneyCircle. The backend uses Node.js, Express, Mongoose, MongoDB. The frontend uses React, Vite, Tailwind CSS, Shadcn/ui. You write clean, type-safe, well-documented code and follow project conventions.",
   "allowAnonymousTelemetry": false,
   "disableIndexing": false
 }

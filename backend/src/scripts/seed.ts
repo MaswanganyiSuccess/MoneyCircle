@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { faker } from '@faker-js/faker';
-import { User } from '../models/User.model';
-import { Loan } from '../models/Loan.model';
+import { User, IUser } from '../models/User.model';
+import { Loan, ILoan } from '../models/Loan.model';
 import { Repayment } from '../models/Repayment.model';
 import { Transaction } from '../models/Transaction.model';
 import { Notification } from '../models/Notification.model';
@@ -28,12 +28,12 @@ const seedDatabase = async () => {
     console.log('👤 Creating users...');
 
     const creditGrades = ['A+', 'A', 'B', 'C', 'D', 'E'];
-    const borrowers = [];
+    const borrowers: IUser[] = [];   // ✅ explicit type
     for (let i = 0; i < 5; i++) {
       const grade = creditGrades[i % creditGrades.length];
       const user = new User({
         email: faker.internet.email({ firstName: faker.person.firstName(), lastName: faker.person.lastName() }),
-        passwordHash: '$2a$10$HASHEDPASSWORD', // dummy hash
+        passwordHash: '$2a$10$HASHEDPASSWORD',
         firstName: faker.person.firstName(),
         lastName: faker.person.lastName(),
         phoneNumber: faker.phone.number({ style: 'international' }),
@@ -55,8 +55,7 @@ const seedDatabase = async () => {
       borrowers.push(user);
     }
 
-    const lenders = [];
-    const tiers = ['Basic', 'Plus', 'Pro'];
+    const lenders: IUser[] = [];   // ✅ explicit type
     for (let i = 0; i < 3; i++) {
       const user = new User({
         email: faker.internet.email({ firstName: faker.person.firstName(), lastName: faker.person.lastName() }),
@@ -75,7 +74,7 @@ const seedDatabase = async () => {
     // 2. Create Loans
     console.log('💰 Creating loans...');
     const loanStatuses = ['pending', 'active', 'completed', 'defaulted'];
-    const loans = [];
+    const loans: ILoan[] = [];   // ✅ explicit type
     for (let i = 0; i < 10; i++) {
       const borrower = faker.helpers.arrayElement(borrowers);
       const lender = i < 5 ? faker.helpers.arrayElement(lenders) : null;

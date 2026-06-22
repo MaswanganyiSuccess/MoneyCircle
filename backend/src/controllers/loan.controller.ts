@@ -19,7 +19,14 @@ export class LoanController {
   static async applyLoan(req: AuthenticatedRequest, res: Response) {
     try {
       const data = applyLoanSchema.parse(req.body);
-      const loan = await LoanService.applyLoan(req.user!.id, data);
+      // ✅ Explicitly pass required fields – Zod ensures they exist, so `!` is safe.
+      const loan = await LoanService.applyLoan(req.user!.id, {
+        amount: data.amount!,
+        termMonths: data.termMonths!,
+        purpose: data.purpose!,
+        loanType: data.loanType!,
+        collateral: data.collateral,
+      });
       sendSuccess(res, loan, 'Loan application submitted successfully', 201);
     } catch (error) {
       if (error instanceof ZodError) {
