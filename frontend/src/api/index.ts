@@ -1,42 +1,38 @@
-import api from './client.ts'
+import axios, { type AxiosResponse } from 'axios';
 
- const authService = {
-    /**
-     * Authenticate an existing user
-     * @param {Object} credentials - { email, password }
-     */
-    login: async (credentials) => {
-        try {
-            const response = await api.post('/auth/login', credentials);
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '',
+  headers: { 'Content-Type': 'application/json' },
+});
 
-            // If success, store data securely in localStorage
-            if (response.success && response.data) {
-                localStorage.setItem('accessToken', response.data.tokens.accessToken);
-                localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-            }
-            return response;
-        } catch (error) {
-            throw error; 
-        }
-    },
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
 
-    /**
-     * Register a new borrower or lender profile
-     * @param {Object} profileData - Matches your NCR/South African validation rule requirements
-     */
-    register: async (profileData) => {
-        try {
-            return await api.post('/auth/register', profileData);
-        } catch (error) {
-            throw error;
-        }
-    },
-    
-    logout: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  idNumber: string;
+  role: 'borrower' | 'lender';
+}
+
+export const authService = {
+  login: async (credentials: LoginCredentials) => {
+    const response: AxiosResponse = await api.post('/auth/login', credentials);
+    const data = response.data;
+    if (data.success && data.data) {
+      return data;
     }
+    throw new Error(data.error || 'Login failed');
+  },
+  register: async (profileData: RegisterData) => {
+    const response: AxiosResponse = await api.post('/auth/register', profileData);
+    return response.data;
+  },
 };
-export default authService;
+
+export default api;
