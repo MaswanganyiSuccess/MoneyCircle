@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, X, Camera, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Check, Camera, RefreshCw, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import PublicNav from '@/components/common/PublicNav';
 import { useTheme } from '@/components/hooks/useTheme';
+import { submitBorrowerOnboarding } from '@/api/onboarding';
 import styles from './SignupPage.module.css';
 
 // ─── Bank Data ──────────────────────────────────────────────────
@@ -44,6 +45,14 @@ interface SignupFormData {
   proofOfAddress: File | null;
   phoneVerified: boolean;
   emailVerified: boolean;
+  address: string;
+}
+
+interface Verifications {
+  idVerified: boolean;
+  selfieVerified: boolean;
+  bankVerified: boolean;
+  addressVerified: boolean;
 }
 
 // ─── Validation Helpers ─────────────────────────────────────────
@@ -82,45 +91,45 @@ function PersonalStep({ formData, handleChange, errors = {} }: StepProps) {
   return (
     <div className={styles.stepContent}>
       <div className={styles.formGroup}>
-        <div className={styles.nameRow}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={styles.label}>First Name</label>
-            <input name="firstName" value={formData.firstName} onChange={handleChange} className={styles.input} required placeholder="John" />
+            <label htmlFor="firstName" className={styles.label}>First Name</label>
+            <input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} className={styles.input} required placeholder="John" />
             {errors.firstName && <div className={styles.error}>{errors.firstName}</div>}
           </div>
           <div>
-            <label className={styles.label}>Last Name</label>
-            <input name="lastName" value={formData.lastName} onChange={handleChange} className={styles.input} required placeholder="Doe" />
+            <label htmlFor="lastName" className={styles.label}>Last Name</label>
+            <input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} className={styles.input} required placeholder="Doe" />
             {errors.lastName && <div className={styles.error}>{errors.lastName}</div>}
           </div>
         </div>
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Email</label>
-        <input name="email" type="email" value={formData.email} onChange={handleChange} className={styles.input} required placeholder="you@example.com" />
+        <label htmlFor="email" className={styles.label}>Email</label>
+        <input id="email" name="email" type="email" value={formData.email} onChange={handleChange} className={styles.input} required placeholder="you@example.com" />
         {errors.email && <div className={styles.error}>{errors.email}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Phone Number</label>
-        <input name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className={styles.input} required placeholder="+27 12 345 6789" />
+        <label htmlFor="phoneNumber" className={styles.label}>Phone Number</label>
+        <input id="phoneNumber" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className={styles.input} required placeholder="+27 12 345 6789" />
         <div className={styles.helper}>Include country code (e.g., +27 for SA)</div>
         {errors.phoneNumber && <div className={styles.error}>{errors.phoneNumber}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>South African ID Number</label>
-        <input name="idNumber" value={formData.idNumber} onChange={handleChange} className={styles.input} required placeholder="9501155123084" />
+        <label htmlFor="idNumber" className={styles.label}>South African ID Number</label>
+        <input id="idNumber" name="idNumber" value={formData.idNumber} onChange={handleChange} className={styles.input} required placeholder="9501155123084" />
         <div className={styles.helper}>Enter a valid South African ID number</div>
         {errors.idNumber && <div className={styles.error}>{errors.idNumber}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Password</label>
-        <input name="password" type="password" value={formData.password} onChange={handleChange} className={styles.input} required minLength={8} placeholder="••••••••" />
+        <label htmlFor="password" className={styles.label}>Password</label>
+        <input id="password" name="password" type="password" value={formData.password} onChange={handleChange} className={styles.input} required minLength={8} placeholder="••••••••" />
         <div className={styles.helper}>At least 8 characters</div>
         {errors.password && <div className={styles.error}>{errors.password}</div>}
       </div>
       <div className={styles.formGroup}>
         <div className={styles.label}>I am a…</div>
-        <div className={styles.radioGroup}>
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
           <label className={styles.radioLabel}>
             <input type="radio" name="role" value="borrower" checked={formData.role === 'borrower'} onChange={handleChange} className={styles.radioInput} />
             Borrower (seeking funds)
@@ -152,8 +161,8 @@ function BankingStep({ formData, handleChange, errors = {} }: StepProps) {
   return (
     <div className={styles.stepContent}>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Bank Name</label>
-        <select name="bankName" value={formData.bankName || ''} onChange={handleBankChange} className={styles.input} required>
+        <label htmlFor="bankName" className={styles.label}>Bank Name</label>
+        <select id="bankName" name="bankName" value={formData.bankName || ''} onChange={handleBankChange} className={styles.input} required aria-label="Select your bank" title="Select your bank">
           <option value="">Select your bank</option>
           {SA_BANKS.map((bank) => (
             <option key={bank.name} value={bank.name}>{bank.name}</option>
@@ -162,13 +171,13 @@ function BankingStep({ formData, handleChange, errors = {} }: StepProps) {
         {errors.bankName && <div className={styles.error}>{errors.bankName}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Account Number</label>
-        <input name="accountNumber" value={formData.accountNumber} onChange={handleChange} className={styles.input} required placeholder="1234567890" />
+        <label htmlFor="accountNumber" className={styles.label}>Account Number</label>
+        <input id="accountNumber" name="accountNumber" value={formData.accountNumber} onChange={handleChange} className={styles.input} required placeholder="1234567890" />
         {errors.accountNumber && <div className={styles.error}>{errors.accountNumber}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Branch Code</label>
-        <input name="branchCode" value={formData.branchCode} onChange={handleChange} className={styles.input} required placeholder="e.g., 470010" readOnly={selectedBankData && selectedBankData.codes.length === 1} />
+        <label htmlFor="branchCode" className={styles.label}>Branch Code</label>
+        <input id="branchCode" name="branchCode" value={formData.branchCode} onChange={handleChange} className={styles.input} required placeholder="e.g., 470010" readOnly={selectedBankData && selectedBankData.codes.length === 1} />
         {selectedBankData && selectedBankData.codes.length > 1 && (
           <div className={styles.helper}>Valid codes: {selectedBankData.codes.join(', ')}</div>
         )}
@@ -177,15 +186,23 @@ function BankingStep({ formData, handleChange, errors = {} }: StepProps) {
         )}
         {errors.branchCode && <div className={styles.error}>{errors.branchCode}</div>}
       </div>
-      <div className={styles.formGroup}>
-        <label className={styles.label}>Monthly Income (ZAR)</label>
-        <input name="monthlyIncome" type="number" value={formData.monthlyIncome || ''} onChange={handleChange} className={styles.input} required min={0} placeholder="0" />
-        {errors.monthlyIncome && <div className={styles.error}>{errors.monthlyIncome}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={styles.formGroup}>
+          <label htmlFor="monthlyIncome" className={styles.label}>Monthly Income (ZAR)</label>
+          <input id="monthlyIncome" name="monthlyIncome" type="number" value={formData.monthlyIncome || ''} onChange={handleChange} className={styles.input} required min={0} placeholder="0" />
+          {errors.monthlyIncome && <div className={styles.error}>{errors.monthlyIncome}</div>}
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="deductions" className={styles.label}>Monthly Deductions (tax, pension, etc.)</label>
+          <input id="deductions" name="deductions" type="number" value={formData.deductions || ''} onChange={handleChange} className={styles.input} min={0} placeholder="0" />
+          {errors.deductions && <div className={styles.error}>{errors.deductions}</div>}
+        </div>
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Monthly Deductions (tax, pension, etc.)</label>
-        <input name="deductions" type="number" value={formData.deductions || ''} onChange={handleChange} className={styles.input} min={0} placeholder="0" />
-        {errors.deductions && <div className={styles.error}>{errors.deductions}</div>}
+        <label htmlFor="address" className={styles.label}>Physical Address</label>
+        <input id="address" name="address" value={formData.address || ''} onChange={handleChange} className={styles.input} required placeholder="Street, City, Province" />
+        <div className={styles.helper}>This will be used for address verification</div>
+        {errors.address && <div className={styles.error}>{errors.address}</div>}
       </div>
     </div>
   );
@@ -195,8 +212,8 @@ function EmploymentStep({ formData, handleChange, errors = {} }: StepProps) {
   return (
     <div className={styles.stepContent}>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Employment Type</label>
-        <select name="employmentType" value={formData.employmentType} onChange={handleChange} className={styles.input} required>
+        <label htmlFor="employmentType" className={styles.label}>Employment Type</label>
+        <select id="employmentType" name="employmentType" value={formData.employmentType} onChange={handleChange} className={styles.input} required aria-label="Select employment type" title="Select employment type">
           <option value="">Select employment type</option>
           <option value="employed">Employed</option>
           <option value="self-employed">Self-employed</option>
@@ -207,51 +224,53 @@ function EmploymentStep({ formData, handleChange, errors = {} }: StepProps) {
       {formData.employmentType !== 'unemployed' && (
         <>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Employer / Business Name</label>
-            <input name="employerName" value={formData.employerName} onChange={handleChange} className={styles.input} required placeholder="Company or business name" />
+            <label htmlFor="employerName" className={styles.label}>Employer / Business Name</label>
+            <input id="employerName" name="employerName" value={formData.employerName} onChange={handleChange} className={styles.input} required placeholder="Company or business name" />
             {errors.employerName && <div className={styles.error}>{errors.employerName}</div>}
           </div>
           <div className={styles.formGroup}>
-            <label className={styles.label}>Employer / Business Contact</label>
-            <input name="employerContact" value={formData.employerContact} onChange={handleChange} className={styles.input} required placeholder="Phone or email for verification" />
+            <label htmlFor="employerContact" className={styles.label}>Employer / Business Contact</label>
+            <input id="employerContact" name="employerContact" value={formData.employerContact} onChange={handleChange} className={styles.input} required placeholder="Phone or email for verification" />
             {errors.employerContact && <div className={styles.error}>{errors.employerContact}</div>}
           </div>
         </>
       )}
       {formData.employmentType === 'employed' && (
         <div className={styles.formGroup}>
-          <label className={styles.label}>Proof of Employment</label>
-          <input name="employmentProof" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required />
+          <label htmlFor="employmentProof" className={styles.label}>Proof of Employment</label>
+          <input id="employmentProof" name="employmentProof" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required aria-label="Proof of Employment" title="Proof of Employment" />
           <div className={styles.helper}>Offer letter, contract, or employment confirmation</div>
         </div>
       )}
       {formData.employmentType === 'self-employed' && (
         <div className={styles.formGroup}>
-          <label className={styles.label}>6 Months Statement</label>
-          <input name="selfEmployedStatement" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required />
+          <label htmlFor="selfEmployedStatement" className={styles.label}>6 Months Statement</label>
+          <input id="selfEmployedStatement" name="selfEmployedStatement" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required aria-label="6 Months Statement" title="6 Months Statement" />
           <div className={styles.helper}>Upload 6 months bank statements or business proof</div>
         </div>
       )}
-      <div className={styles.formGroup}>
-        <label className={styles.label}>Alternate Contact Name</label>
-        <input name="alternativeContactName" value={formData.alternativeContactName} onChange={handleChange} className={styles.input} required placeholder="Relative or emergency contact" />
-        {errors.alternativeContactName && <div className={styles.error}>{errors.alternativeContactName}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={styles.formGroup}>
+          <label htmlFor="alternativeContactName" className={styles.label}>Alternate Contact Name</label>
+          <input id="alternativeContactName" name="alternativeContactName" value={formData.alternativeContactName} onChange={handleChange} className={styles.input} required placeholder="Relative or emergency contact" />
+          {errors.alternativeContactName && <div className={styles.error}>{errors.alternativeContactName}</div>}
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="alternativeContactPhone" className={styles.label}>Alternate Contact Phone</label>
+          <input id="alternativeContactPhone" name="alternativeContactPhone" value={formData.alternativeContactPhone} onChange={handleChange} className={styles.input} required placeholder="Contact phone number" />
+          {errors.alternativeContactPhone && <div className={styles.error}>{errors.alternativeContactPhone}</div>}
+        </div>
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Alternate Contact Phone</label>
-        <input name="alternativeContactPhone" value={formData.alternativeContactPhone} onChange={handleChange} className={styles.input} required placeholder="Contact phone number" />
-        {errors.alternativeContactPhone && <div className={styles.error}>{errors.alternativeContactPhone}</div>}
-      </div>
-      <div className={styles.formGroup}>
-        <label className={styles.label}>Alternate Contact Email</label>
-        <input name="alternativeContactEmail" value={formData.alternativeContactEmail} onChange={handleChange} className={styles.input} required placeholder="Contact email address" />
+        <label htmlFor="alternativeContactEmail" className={styles.label}>Alternate Contact Email</label>
+        <input id="alternativeContactEmail" name="alternativeContactEmail" value={formData.alternativeContactEmail} onChange={handleChange} className={styles.input} required placeholder="Contact email address" />
         {errors.alternativeContactEmail && <div className={styles.error}>{errors.alternativeContactEmail}</div>}
       </div>
     </div>
   );
 }
 
-// ─── Selfie Capture Component (with live preview) ─────────────────
+// ─── Selfie Capture Component ────────────────────────────────────
 function SelfieCaptureLive({ onCapture, onError, className = '' }: { 
   onCapture: (file: File) => void; 
   onError?: (msg: string) => void; 
@@ -265,6 +284,16 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const stopCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, [stream]);
+
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -277,20 +306,10 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
         await videoRef.current.play();
       }
       setError(null);
-    } catch (err) {
+    } catch {
       const msg = 'Camera access denied. Please allow camera permissions.';
       setError(msg);
       if (onError) onError(msg);
-    }
-  };
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
     }
   };
 
@@ -322,7 +341,7 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
       const img = new Image();
       img.src = imageData;
       await new Promise((resolve) => (img.onload = resolve));
-      // @ts-ignore
+      // @ts-expect-error - FaceDetector is not yet in TypeScript lib
       const detector = new window.FaceDetector({ maxDetectedFaces: 1, fastMode: true });
       const faces = await detector.detect(img);
       const detected = faces.length > 0;
@@ -335,8 +354,8 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
         setError('No face detected. Please position your face clearly and try again.');
         if (onError) onError('No face detected.');
       }
-    } catch (err) {
-      console.error('Face detection error:', err);
+    } catch {
+      console.error('Face detection error');
       setFaceDetected(true);
       const file = dataURLtoFile(imageData, 'selfie.jpg');
       onCapture(file);
@@ -365,7 +384,7 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
 
   useEffect(() => {
     return () => { stopCamera(); };
-  }, []);
+  }, [stopCamera]);
 
   if (!stream && !capturedImage) {
     return (
@@ -412,7 +431,7 @@ function SelfieCaptureLive({ onCapture, onError, className = '' }: {
             </div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={retake} className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/20 flex items-center gap-2"><RefreshCw className="h-4 w-4" /> Retake</button>
           {faceDetected === false && <span className="text-xs text-destructive flex items-center">Please retake with clear face</span>}
           {faceDetected === true && <span className="text-xs text-emerald-500 flex items-center">Selfie accepted ✓</span>}
@@ -434,8 +453,8 @@ function DocumentStep({ handleChange, selfieFile, setSelfieFile, onSelfieCapture
   return (
     <div className={styles.stepContent}>
       <div className={styles.formGroup}>
-        <label className={styles.label}>ID Front (photo)</label>
-        <input name="idFront" type="file" accept="image/*" onChange={handleChange} className={styles.fileInput} required />
+        <label htmlFor="idFront" className={styles.label}>ID Front (photo)</label>
+        <input id="idFront" name="idFront" type="file" accept="image/*" onChange={handleChange} className={styles.fileInput} required aria-label="ID Front photo" title="ID Front photo" />
         <div className={styles.helper}>Clear photo of the front of your SA ID</div>
         {errors.idFront && <div className={styles.error}>{errors.idFront}</div>}
       </div>
@@ -447,14 +466,14 @@ function DocumentStep({ handleChange, selfieFile, setSelfieFile, onSelfieCapture
         {errors.selfie && <div className={styles.error}>{errors.selfie}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Bank Statement</label>
-        <input name="bankStatement" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required />
+        <label htmlFor="bankStatement" className={styles.label}>Bank Statement</label>
+        <input id="bankStatement" name="bankStatement" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required aria-label="Bank Statement" title="Bank Statement" />
         <div className={styles.helper}>Last 3 months (PDF or image)</div>
         {errors.bankStatement && <div className={styles.error}>{errors.bankStatement}</div>}
       </div>
       <div className={styles.formGroup}>
-        <label className={styles.label}>Proof of Address</label>
-        <input name="proofOfAddress" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required />
+        <label htmlFor="proofOfAddress" className={styles.label}>Proof of Address</label>
+        <input id="proofOfAddress" name="proofOfAddress" type="file" accept=".pdf,image/*" onChange={handleChange} className={styles.fileInput} required aria-label="Proof of Address" title="Proof of Address" />
         <div className={styles.helper}>Utility bill or municipal statement (not older than 3 months)</div>
         {errors.proofOfAddress && <div className={styles.error}>{errors.proofOfAddress}</div>}
       </div>
@@ -484,14 +503,14 @@ function ContactVerificationStep({ formData, phoneCodeInput, emailCodeInput, onP
       <div className={styles.formGroup}>
         <label className={styles.label}>Phone Verification</label>
         <p className={styles.helper}>A verification code will be sent to {formData.phoneNumber}.</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onSendPhoneCode} className={styles.btnSecondary}>Send code</button>
           <button type="button" onClick={() => setShowPhoneCode(!showPhoneCode)} className={styles.btnSecondary}>
             {showPhoneCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} Enter code
           </button>
         </div>
         {showPhoneCode && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             <input type="text" value={phoneCodeInput} onChange={(e) => onPhoneCodeChange(e.target.value)} className={styles.input} placeholder="123456" maxLength={6} />
             <button type="button" onClick={onVerifyPhoneCode} className={styles.btnSecondary}>Verify</button>
           </div>
@@ -504,14 +523,14 @@ function ContactVerificationStep({ formData, phoneCodeInput, emailCodeInput, onP
       <div className={styles.formGroup}>
         <label className={styles.label}>Email Verification</label>
         <p className={styles.helper}>A verification code will be sent to {formData.email}.</p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onSendEmailCode} className={styles.btnSecondary}>Send code</button>
           <button type="button" onClick={() => setShowEmailCode(!showEmailCode)} className={styles.btnSecondary}>
             {showEmailCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} Enter code
           </button>
         </div>
         {showEmailCode && (
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             <input type="text" value={emailCodeInput} onChange={(e) => onEmailCodeChange(e.target.value)} className={styles.input} placeholder="123456" maxLength={6} />
             <button type="button" onClick={onVerifyEmailCode} className={styles.btnSecondary}>Verify</button>
           </div>
@@ -526,7 +545,7 @@ function ContactVerificationStep({ formData, phoneCodeInput, emailCodeInput, onP
   );
 }
 
-function VerificationStep({ formData, verifications }: { formData: SignupFormData; verifications: any }) {
+function VerificationStep({ verifications }: { verifications: Verifications }) {
   const allVerified = verifications.idVerified && verifications.selfieVerified && verifications.bankVerified && verifications.addressVerified;
   
   return (
@@ -592,6 +611,7 @@ export default function SignupPage() {
     alternativeContactName: '', alternativeContactPhone: '', alternativeContactEmail: '',
     idFront: null, selfie: null, employmentProof: null, selfEmployedStatement: null,
     bankStatement: null, proofOfAddress: null, phoneVerified: false, emailVerified: false,
+    address: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
@@ -602,7 +622,7 @@ export default function SignupPage() {
   const [emailCodeInput, setEmailCodeInput] = useState('');
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [verifications, setVerifications] = useState({
+  const [verifications, setVerifications] = useState<Verifications>({
     idVerified: false,
     selfieVerified: false,
     bankVerified: false,
@@ -670,6 +690,7 @@ export default function SignupPage() {
         if (formData.monthlyIncome < 0) newErrors.monthlyIncome = 'Must be at least 0';
         if (formData.deductions < 0) newErrors.deductions = 'Must be at least 0';
         if (formData.deductions > formData.monthlyIncome) newErrors.deductions = 'Cannot exceed income';
+        if (!formData.address.trim()) newErrors.address = 'Physical address is required';
         break;
       case 2:
         if (!formData.employmentType) newErrors.employmentType = 'Select employment type';
@@ -687,7 +708,7 @@ export default function SignupPage() {
         if (!selfieFile) newErrors.selfie = 'Selfie required';
         if (!formData.bankStatement) newErrors.bankStatement = 'Bank statement required';
         if (!formData.proofOfAddress) newErrors.proofOfAddress = 'Proof of address required';
-        // Auto-verify documents
+        // Auto-verify documents (mock)
         if (formData.idFront && formData.idNumber) {
           setVerifications(prev => ({ ...prev, idVerified: true }));
         }
@@ -738,13 +759,10 @@ export default function SignupPage() {
         if (value instanceof File) payload.append(key, value);
         else payload.append(key, String(value));
       });
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      const res = await fetch(`${baseUrl}/api/auth/borrower-onboarding`, { method: 'POST', body: payload });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Submission failed');
+      await submitBorrowerOnboarding(payload);
       navigate('/verification-pending');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } catch {
+      setError('An unknown error occurred.');
     } finally { setLoading(false); }
   };
 
@@ -761,10 +779,13 @@ export default function SignupPage() {
         verificationError={verificationError} phoneVerified={phoneVerified} emailVerified={emailVerified}
       />;
       case 4: return <DocumentStep handleChange={handleChange} selfieFile={selfieFile} setSelfieFile={setSelfieFile} onSelfieCapture={(file) => setFormData(prev => ({ ...prev, selfie: file }))} errors={errors} />;
-      case 5: return <VerificationStep formData={formData} verifications={verifications} />;
+      case 5: return <VerificationStep verifications={verifications} />;
       default: return null;
     }
   };
+
+  // Compute progress width as a CSS variable to avoid inline style warning
+  const progressWidth = ((currentStep + 1) / steps.length) * 100;
 
   return (
     <>
@@ -780,16 +801,27 @@ export default function SignupPage() {
               ))}
             </div>
             <div className={styles.progressBar}>
-              <div className={styles.progressFill} style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }} />
+              <div 
+                className={styles.progressFill} 
+                style={{ '--progress-width': `${progressWidth}%` } as React.CSSProperties} 
+              />
             </div>
           </div>
           <form onSubmit={handleSubmit}>
             {renderStep()}
             {error && <div className={styles.error}>{error}</div>}
-            <div className={styles.buttonRow}>
-              {currentStep > 0 && <button type="button" onClick={prevStep} disabled={loading} className={styles.btnBack}>Back</button>}
-              <button type="submit" disabled={loading} className={`${styles.btnNext} ${currentStep === 0 ? styles.mlAuto : ''}`}>
-                {loading ? <><Loader2 className="loader" style={{ width: '1rem', height: '1rem', animation: 'spin 1s linear infinite' }} /> Submitting…</>
+            <div className={`${styles.buttonRow} flex flex-wrap gap-2 justify-between items-center`}>
+              {currentStep > 0 && (
+                <button type="button" onClick={prevStep} disabled={loading} className={styles.btnBack}>
+                  Back
+                </button>
+              )}
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className={`${styles.btnNext} ${currentStep === 0 ? 'ml-auto' : ''}`}
+              >
+                {loading ? <><Loader2 className={styles.spinner} /> Submitting…</>
                 : currentStep === steps.length - 1 ? 'Submit' : 'Next'}
               </button>
             </div>

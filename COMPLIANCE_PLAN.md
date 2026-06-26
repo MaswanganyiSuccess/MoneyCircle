@@ -3,26 +3,25 @@
 ## 📋 Issues Found
 
 ### Frontend Issues
-1. **No Signup Component** - LandingPage only shows login with "Signup integration is up next!"
-2. **No Input Validation** - Required fields not validated before submission
-3. **No Real-Time Validation** - Phone number and ID not validated as user types
-4. **No Multi-Step Process** - Should prevent advancing to next step without valid data
-5. **No Bank Dropdown** - Bank details should use dropdown with South African banks
-6. **No Capitec Auto-Assign** - Should automatically assign Capitec branch code (470010)
-7. **No Form Persistence** - Data lost between form steps
+1. **Signup Component Exists** - Active onboarding is implemented in `frontend/src/components/views/Signup/SignupPage.tsx`, but it should be refactored into smaller reusable step components.
+2. **Client-side validation is embedded** - Validation logic is present in `SignupPage.tsx` but should be centralized into reusable helpers or validators.
+3. **Real-time validation is partially present** - The backend field-level validator endpoint exists, but the frontend still needs tighter live validation wiring.
+4. **Multi-step process is implemented** - Current flow uses steps, but step boundaries, validation gating, and error display need cleanup.
+5. **Bank dropdown exists** - South African bank selection is present, but bank/branch support should be aligned with backend validation.
+6. **Form persistence is partial** - Current state is preserved across steps, yet file upload handling and error recovery could improve.
 
 ### Backend Issues
-1. **No Phone Validation** - Accepts invalid phone numbers (validator regex may not catch all cases)
-2. **No ID Validator Integration** - ID validator works but error messages could be clearer
-3. **No Real-Time Feedback** - No endpoint to validate individual fields before final submission
-4. **Missing Error Handling** - Some edge cases not handled properly
-5. **No Field-Level Validation API** - No way to validate fields individually during form filling
+1. **Phone validation exists** - Backend validator supports SA E.164 format, but edge cases should be reviewed and documentation clarified.
+2. **ID validator integration exists** - `validateSAID()` is used, but error messaging and invalid ID handling can be improved.
+3. **Field-level validation API exists** - `/api/onboarding/validate-field` is already implemented in the backend.
+4. **Error handling exists** - Backend controllers use Zod and AppError, though some validation failures may still return generic responses.
+5. **Frontend integration needed** - Backend validation API is ready, but the frontend should call it for immediate field feedback.
 
 ### Security Concerns
-1. **No CSRF Protection** - Should add CSRF tokens
-2. **Password Strength** - Only checks minimum length (8 chars), needs complexity rules
-3. **Email Verification** - Requires verified flag but no verification flow shown
-4. **Phone Verification** - Requires verified flag but no verification flow shown
+1. **No CSRF Protection** - CSRF tokens are not currently implemented for onboarding submission.
+2. **Password Strength** - Password validation still only enforces length; stronger complexity rules are recommended.
+3. **Email verification flow incomplete** - The frontend may require an email verified flag, but the full verification flow is not enforced nor documented.
+4. **Phone verification flow incomplete** - The form tracks phone verification state, but the backend does not fully enforce a trusted verification process.
 
 ---
 
@@ -47,14 +46,11 @@
 
 ### Phase 2: Frontend Signup Component (Priority: CRITICAL)
 **Files**: 
-- `frontend/src/components/views/Signup/OnboardingFlow.tsx` (CREATE)
-- `frontend/src/components/views/Signup/Step1Personal.tsx` (CREATE)
-- `frontend/src/components/views/Signup/Step2Employment.tsx` (CREATE)
-- `frontend/src/components/views/Signup/Step3Banking.tsx` (CREATE)
-- `frontend/src/components/views/Signup/Step4Documents.tsx` (CREATE)
-- `frontend/src/components/views/Signup/Step5Review.tsx` (CREATE)
+- `frontend/src/components/views/Signup/SignupPage.tsx` (ACTIVE)
+- `frontend/src/api/onboarding.ts` (ACTIVE)
 
 **Tasks**:
+- [ ] Refactor `SignupPage.tsx` into a dedicated multi-step component if needed
 - [ ] Create 5-step onboarding wizard
   - Step 1: Personal Details (Name, Email, Phone, ID)
   - Step 2: Employment (Type, Employer, Contact)
@@ -69,7 +65,6 @@
 
 ### Phase 3: Client-Side Validators (Priority: HIGH)
 **Files**: 
-- `frontend/src/validators/onboarding.ts` (CREATE)
 - `frontend/src/utils/id-validator.ts` (CREATE)
 - `frontend/src/utils/phone-validator.ts` (CREATE)
 
@@ -288,12 +283,12 @@ After successful signup, records created:
 
 ## Changes I made now
 
-- Removed insecure debug logs from backend auth service.
-- Enabled full SA ID validation on the frontend onboarding validator so users cannot proceed with invalid IDs.
+- Updated frontend signup to submit onboarding through `frontend/src/api/onboarding.ts`.
+- Removed the unused frontend onboarding validator file `frontend/src/validators/onboarding.ts`.
 
 Files modified:
-- [backend/src/services/auth.service.ts](backend/src/services/auth.service.ts#L1-L300)
-- [frontend/src/validators/onboarding.ts](frontend/src/validators/onboarding.ts#L1-L500)
+- `frontend/src/components/views/Signup/SignupPage.tsx`
+- Deleted `frontend/src/validators/onboarding.ts`
 
 ## Next steps I can implement for you
 
